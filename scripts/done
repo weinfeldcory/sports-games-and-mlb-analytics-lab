@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'USAGE'
+Usage: scripts/done ["session summary"]
+
+Append a dated entry to journal/dev-log.md, commit all tracked/untracked
+non-ignored changes, and push the current branch to origin.
+
+Examples:
+  scripts/done "Add hitter analysis export"
+  scripts/done
+USAGE
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    usage
+    exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+branch="$(git branch --show-current)"
+if [[ -z "$branch" ]]; then
+    echo "Refusing to run: not on a named branch."
+    exit 1
+fi
+
+if ! git remote get-url origin >/dev/null 2>&1; then
+    echo "Refusing to run: no origin remote is configured."
+    exit 1
+fi
+
+summary="${*:-Session update}"
+date_stamp="$(date +%Y-%m-%d)"
+time_stamp="$(date '+%H:%M:%S %Z')"
+journal_path="journal/dev-log.md"
+
+mkdir -p "$(dirname "$journal_path")"
+touch "$journal_path"
+
+status_before="$(git status --short)"
+if [[ -z "$status_before" ]]; then
+    status_text="- No file changes before journal update."
+else
+    status_text="$(printf '%s\n' "$status_before" | sed 's/^/- `/' | sed 's/$/`/')"
+fi
+
+if ! grep -q "^## ${date_stamp}$" "$journal_path"; then
+    {
+        if [[ -s "$journal_path" ]]; then
+            printf '\n'
+        fi
+        printf '## %s\n' "$date_stamp"
+    } >> "$journal_path"
+fi
+
+{
+    printf '\n### %s\n' "$time_stamp"
+    printf '%s\n' "- Summary: ${summary}"
+    printf '%s\n' "- Branch: \`${branch}\`"
+    printf '%s\n' "- Changes before commit:"
+    printf '%s\n' "$status_text"
+} >> "$journal_path"
+
+git add -A
+
+if git diff --cached --quiet; then
+    echo "No changes to commit after updating the journal."
+    exit 0
+fi
+
+commit_message="${summary}"
+if [[ "$commit_message" == "Session update" ]]; then
+    commit_message="Session update ${date_stamp}"
+fi
+
+git commit -m "$commit_message"
+git push -u origin "$branch"
+
+echo "Done: journal updated, changes committed, and ${branch} pushed to origin."
