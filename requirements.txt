@@ -1,0 +1,6 @@
+pybaseball
+pandas
+duckdb
+jupyter
+matplotlib
+scikit-learn
