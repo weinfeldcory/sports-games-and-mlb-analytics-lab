@@ -4,8 +4,7 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
-
-DB_PATH = "mlb.duckdb"
+from paths import DB_PATH
 
 
 def main():
@@ -16,7 +15,7 @@ def main():
     sql_file = Path(sys.argv[1])
     query = sql_file.read_text()
 
-    con = duckdb.connect(DB_PATH)
+    con = duckdb.connect(str(DB_PATH))
     df = con.execute(query).df()
     con.close()
 

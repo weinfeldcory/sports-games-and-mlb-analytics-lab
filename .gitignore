@@ -8,6 +8,6 @@ __pycache__/
 
 .ipynb_checkpoints/
 
-data/raw/*.csv
-data/processed/*.csv
 *.duckdb
+projects/mlb-analytics-projections/data/raw/*.csv
+projects/mlb-analytics-projections/data/processed/*.csv

@@ -2,21 +2,21 @@ from pathlib import Path
 
 import duckdb
 
+from paths import DB_PATH, SQL_DIR
 
-DB_PATH = "mlb.duckdb"
 SQL_FILES = [
-    Path("sql/player_metadata.sql"),
-    Path("sql/hitter_features.sql"),
-    Path("sql/woba_xwoba_diff.sql"),
-    Path("sql/aging_curves.sql"),
-    Path("sql/hitter_model_2025.sql"),
-    Path("sql/hitter_projection_engine_2025.sql"),
-    Path("sql/hitter_projection_engine_2026.sql"),
+    SQL_DIR / "player_metadata.sql",
+    SQL_DIR / "hitter_features.sql",
+    SQL_DIR / "woba_xwoba_diff.sql",
+    SQL_DIR / "aging_curves.sql",
+    SQL_DIR / "hitter_model_2025.sql",
+    SQL_DIR / "hitter_projection_engine_2025.sql",
+    SQL_DIR / "hitter_projection_engine_2026.sql",
 ]
 
 
 def main():
-    con = duckdb.connect(DB_PATH)
+    con = duckdb.connect(str(DB_PATH))
 
     for sql_file in SQL_FILES:
         print(f"Running {sql_file}...")

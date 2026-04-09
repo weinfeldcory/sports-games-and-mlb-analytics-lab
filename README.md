@@ -1,45 +1,32 @@
-# MLB Analytics Lab
+# Sports Games And MLB Analytics Lab
 
-Local baseball analytics workspace using `pybaseball`, DuckDB, pandas, and SQL.
+Workspace repo with separate project folders so the MLB analytics work and the March Madness app stay isolated from each other.
 
-## Local Projection Viewer
+## Projects
 
-Build the modeling tables and export the comparison view:
+- `projects/mlb-analytics-projections`
+  MLB projection modeling, DuckDB pipeline, SQL transforms, and local viewer.
+- `projects/march-madness-game`
+  March Madness draft room, scoring experiments, and live standings app.
+
+## MLB Analytics Quick Start
+
+From the repo root:
 
 ```bash
-.venv/bin/python src/build_modeling_tables.py
-.venv/bin/python src/pull_live_completed_games.py --start-date 2026-03-27 --end-date 2026-04-08
-.venv/bin/python src/export_hitter_projection_vs_current_2026.py
+.venv/bin/python projects/mlb-analytics-projections/src/build_modeling_tables.py
+.venv/bin/python projects/mlb-analytics-projections/src/pull_live_completed_games.py --start-date 2026-03-27 --end-date 2026-04-08
+.venv/bin/python projects/mlb-analytics-projections/src/export_hitter_projection_vs_current_2026.py
 ```
 
-Then host the local viewer:
+Then host the viewer from the MLB project folder:
 
 ```bash
+cd projects/mlb-analytics-projections
 python3 -m http.server 8000
 ```
 
 Open `http://localhost:8000/viewer/` to browse 2026 projections against current stats and 162-game pace.
-
-## Live Completed Games Pull
-
-Pull completed MLB games and per-player boxscore lines from MLB StatsAPI:
-
-```bash
-.venv/bin/python src/pull_live_completed_games.py
-```
-
-Optional date range:
-
-```bash
-.venv/bin/python src/pull_live_completed_games.py --start-date 2026-03-27 --end-date 2026-04-08
-```
-
-This writes raw CSV snapshots under `data/raw/` and refreshes these DuckDB tables:
-
-- `live_completed_games`
-- `live_batting_lines`
-- `live_pitching_lines`
-- `live_rosters`
 
 ## Session Workflow
 

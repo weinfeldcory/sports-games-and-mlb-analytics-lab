@@ -3,8 +3,8 @@ from pathlib import Path
 import pandas as pd
 from pybaseball import batting_stats, pitching_stats
 
+from paths import RAW_DIR
 
-RAW_DIR = Path("data/raw")
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
 START_YEAR = 2023

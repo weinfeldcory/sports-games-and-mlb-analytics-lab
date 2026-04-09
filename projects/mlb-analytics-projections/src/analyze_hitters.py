@@ -2,9 +2,9 @@ from pathlib import Path
 
 import duckdb
 
+from paths import DB_PATH, PROCESSED_DIR
 
-DB_PATH = "mlb.duckdb"
-OUT_PATH = Path("data/processed/top_hitters_2025.csv")
+OUT_PATH = PROCESSED_DIR / "top_hitters_2025.csv"
 OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 query = """
@@ -26,7 +26,7 @@ ORDER BY "WAR" DESC, "OPS" DESC
 LIMIT 50
 """
 
-con = duckdb.connect(DB_PATH)
+con = duckdb.connect(str(DB_PATH))
 df = con.execute(query).df()
 con.close()
 

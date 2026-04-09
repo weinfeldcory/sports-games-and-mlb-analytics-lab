@@ -2,11 +2,9 @@ from pathlib import Path
 
 import duckdb
 
+from paths import DB_PATH, RAW_DIR
 
-DB_PATH = "mlb.duckdb"
-RAW_DIR = Path("data/raw")
-
-con = duckdb.connect(DB_PATH)
+con = duckdb.connect(str(DB_PATH))
 
 con.execute("DROP TABLE IF EXISTS batting_stats")
 con.execute("DROP TABLE IF EXISTS pitching_stats")

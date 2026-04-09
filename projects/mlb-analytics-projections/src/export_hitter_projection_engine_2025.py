@@ -2,11 +2,11 @@ from pathlib import Path
 
 import duckdb
 
+from paths import DB_PATH, PROCESSED_DIR, VIEWER_DATA_DIR
 
-DB_PATH = "mlb.duckdb"
-CSV_OUT_PATH = Path("data/processed/hitter_projection_engine_2025.csv")
-JSON_OUT_PATH = Path("data/processed/hitter_projection_engine_2025.json")
-VIEWER_JSON_OUT_PATH = Path("viewer/data/hitter_projection_engine_2025.json")
+CSV_OUT_PATH = PROCESSED_DIR / "hitter_projection_engine_2025.csv"
+JSON_OUT_PATH = PROCESSED_DIR / "hitter_projection_engine_2025.json"
+VIEWER_JSON_OUT_PATH = VIEWER_DATA_DIR / "hitter_projection_engine_2025.json"
 
 for out_path in (CSV_OUT_PATH, JSON_OUT_PATH, VIEWER_JSON_OUT_PATH):
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -43,7 +43,7 @@ ORDER BY projected_value_war_proxy DESC, projected_woba DESC
 
 
 def main():
-    con = duckdb.connect(DB_PATH, read_only=True)
+    con = duckdb.connect(str(DB_PATH), read_only=True)
     df = con.execute(QUERY).df()
     con.close()
 

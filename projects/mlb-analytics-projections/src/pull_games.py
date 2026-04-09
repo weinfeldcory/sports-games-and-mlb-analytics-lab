@@ -4,9 +4,8 @@ import duckdb
 import pandas as pd
 import requests
 
+from paths import DB_PATH, RAW_DIR
 
-DB_PATH = "mlb.duckdb"
-RAW_DIR = Path("data/raw")
 OUT_PATH = RAW_DIR / "games_2023_2025.csv"
 START_YEAR = 2023
 END_YEAR = 2025
@@ -87,7 +86,7 @@ def main():
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     games.to_csv(OUT_PATH, index=False)
 
-    con = duckdb.connect(DB_PATH)
+    con = duckdb.connect(str(DB_PATH))
     con.execute("DROP TABLE IF EXISTS games")
     con.execute(
         f"""

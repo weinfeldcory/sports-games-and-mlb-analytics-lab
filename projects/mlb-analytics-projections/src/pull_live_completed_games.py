@@ -8,9 +8,8 @@ import duckdb
 import pandas as pd
 import requests
 
+from paths import DB_PATH, RAW_DIR
 
-DB_PATH = "mlb.duckdb"
-RAW_DIR = Path("data/raw")
 SCHEDULE_URL = "https://statsapi.mlb.com/api/v1/schedule"
 BOXSCORE_URL = "https://statsapi.mlb.com/api/v1/game/{game_pk}/boxscore"
 TEAMS_URL = "https://statsapi.mlb.com/api/v1/teams"
@@ -305,7 +304,7 @@ def main() -> None:
     end_date = parse_iso_date(args.end_date) if args.end_date else date.today()
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
-    con = duckdb.connect(DB_PATH)
+    con = duckdb.connect(str(DB_PATH))
     start_date = infer_start_date(args, con, end_date)
 
     if start_date > end_date:

@@ -2,9 +2,9 @@ from pathlib import Path
 
 import duckdb
 
+from paths import DB_PATH, PROCESSED_DIR
 
-DB_PATH = "mlb.duckdb"
-OUT_PATH = Path("data/processed/hitter_model_2025.csv")
+OUT_PATH = PROCESSED_DIR / "hitter_model_2025.csv"
 OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 QUERY = """
@@ -33,7 +33,7 @@ ORDER BY sheet_model_rank
 
 
 def main():
-    con = duckdb.connect(DB_PATH, read_only=True)
+    con = duckdb.connect(str(DB_PATH), read_only=True)
     df = con.execute(QUERY).df()
     con.close()
 
