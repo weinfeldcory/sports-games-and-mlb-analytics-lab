@@ -1,0 +1,868 @@
+{
+  "season": 2026,
+  "updatedAt": "2026-04-09T02:02:20.833Z",
+  "owners": [
+    "Berkman",
+    "Cory",
+    "Shuster",
+    "Seiden"
+  ],
+  "rounds": [
+    "Round of 32 Appearance",
+    "Sweet 16 Appearance",
+    "Elite 8 Appearance",
+    "Final Four Appearance",
+    "Championship Appearance",
+    "Champion"
+  ],
+  "currentScoring": {
+    "1": [
+      0,
+      2,
+      4,
+      7,
+      12,
+      20
+    ],
+    "2": [
+      1,
+      2,
+      5,
+      9,
+      14,
+      23
+    ],
+    "3": [
+      1,
+      2,
+      6,
+      12,
+      16,
+      25
+    ],
+    "4": [
+      1,
+      3,
+      8,
+      15,
+      20,
+      30
+    ],
+    "5": [
+      1,
+      3,
+      8,
+      15,
+      20,
+      30
+    ],
+    "6": [
+      1,
+      4,
+      10,
+      20,
+      28,
+      35
+    ],
+    "7": [
+      1,
+      4,
+      10,
+      20,
+      28,
+      35
+    ],
+    "8": [
+      2,
+      5,
+      12,
+      25,
+      35,
+      45
+    ],
+    "9": [
+      2,
+      5,
+      12,
+      25,
+      35,
+      45
+    ],
+    "10": [
+      2,
+      5,
+      12,
+      25,
+      35,
+      45
+    ],
+    "11": [
+      3,
+      6,
+      15,
+      30,
+      40,
+      50
+    ],
+    "12": [
+      3,
+      6,
+      15,
+      30,
+      40,
+      50
+    ],
+    "13": [
+      3,
+      6,
+      15,
+      30,
+      40,
+      50
+    ],
+    "14": [
+      5,
+      12,
+      20,
+      32,
+      40,
+      50
+    ],
+    "15": [
+      5,
+      12,
+      20,
+      32,
+      40,
+      50
+    ],
+    "16": [
+      10,
+      20,
+      35,
+      50,
+      10000,
+      10000000
+    ]
+  },
+  "games": [
+    {
+      "topTeam": "Duke",
+      "bottomTeam": "Siena",
+      "winner": "Duke",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Ohio St",
+      "bottomTeam": "TCU",
+      "winner": "TCU",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "St John's (NY)",
+      "bottomTeam": "UNI",
+      "winner": "St John's (NY)",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Kansas",
+      "bottomTeam": "California Baptist",
+      "winner": "Kansas",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Louisville",
+      "bottomTeam": "South Fla",
+      "winner": "Louisville",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Michigan St",
+      "bottomTeam": "North Dakota St",
+      "winner": "Michigan St",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "UCLA",
+      "bottomTeam": "UCF",
+      "winner": "UCLA",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "UConn",
+      "bottomTeam": "Furman",
+      "winner": "UConn",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Florida",
+      "bottomTeam": "Prairie View",
+      "winner": "Florida",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Clemson",
+      "bottomTeam": "Iowa",
+      "winner": "Iowa",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Vanderbilt",
+      "bottomTeam": "McNeese",
+      "winner": "Vanderbilt",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Nebraska",
+      "bottomTeam": "Troy",
+      "winner": "Nebraska",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "North Carolina",
+      "bottomTeam": "VCU",
+      "winner": "VCU",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Illinois",
+      "bottomTeam": "Penn",
+      "winner": "Illinois",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Saint Mary's (CA)",
+      "bottomTeam": "Texas A&M",
+      "winner": "Texas A&M",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Houston",
+      "bottomTeam": "Idaho",
+      "winner": "Houston",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Arizona",
+      "bottomTeam": "LIU",
+      "winner": "Arizona",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Villanova",
+      "bottomTeam": "Utah St",
+      "winner": "Utah St",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Wisconsin",
+      "bottomTeam": "High Point",
+      "winner": "High Point",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Arkansas",
+      "bottomTeam": "Hawaii",
+      "winner": "Arkansas",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "BYU",
+      "bottomTeam": "Texas",
+      "winner": "Texas",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Gonzaga",
+      "bottomTeam": "Kennesaw St",
+      "winner": "Gonzaga",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Miami (FL)",
+      "bottomTeam": "Missouri",
+      "winner": "Miami (FL)",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Purdue",
+      "bottomTeam": "Queens (NC)",
+      "winner": "Purdue",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Michigan",
+      "bottomTeam": "Howard",
+      "winner": "Michigan",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Georgia",
+      "bottomTeam": "Saint Louis",
+      "winner": "Saint Louis",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Texas Tech",
+      "bottomTeam": "Akron",
+      "winner": "Texas Tech",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Alabama",
+      "bottomTeam": "Hofstra",
+      "winner": "Alabama",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Tennessee",
+      "bottomTeam": "Miami (OH)",
+      "winner": "Tennessee",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Virginia",
+      "bottomTeam": "Wright St",
+      "winner": "Virginia",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Kentucky",
+      "bottomTeam": "Santa Clara",
+      "winner": "Kentucky",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Iowa St",
+      "bottomTeam": "Tennessee St",
+      "winner": "Iowa St",
+      "round": "Round of 32 Appearance"
+    },
+    {
+      "topTeam": "Duke",
+      "bottomTeam": "TCU",
+      "winner": "Duke",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "St John's (NY)",
+      "bottomTeam": "Kansas",
+      "winner": "St John's (NY)",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Louisville",
+      "bottomTeam": "Michigan St",
+      "winner": "Michigan St",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "UCLA",
+      "bottomTeam": "UConn",
+      "winner": "UConn",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Florida",
+      "bottomTeam": "Iowa",
+      "winner": "Iowa",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Vanderbilt",
+      "bottomTeam": "Nebraska",
+      "winner": "Nebraska",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "VCU",
+      "bottomTeam": "Illinois",
+      "winner": "Illinois",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Texas A&M",
+      "bottomTeam": "Houston",
+      "winner": "Houston",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Arizona",
+      "bottomTeam": "Utah St",
+      "winner": "Arizona",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "High Point",
+      "bottomTeam": "Arkansas",
+      "winner": "Arkansas",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Texas",
+      "bottomTeam": "Gonzaga",
+      "winner": "Texas",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Miami (FL)",
+      "bottomTeam": "Purdue",
+      "winner": "Purdue",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Michigan",
+      "bottomTeam": "Saint Louis",
+      "winner": "Michigan",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Texas Tech",
+      "bottomTeam": "Alabama",
+      "winner": "Alabama",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Tennessee",
+      "bottomTeam": "Virginia",
+      "winner": "Tennessee",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Kentucky",
+      "bottomTeam": "Iowa St",
+      "winner": "Iowa St",
+      "round": "Sweet 16 Appearance"
+    },
+    {
+      "topTeam": "Duke",
+      "bottomTeam": "St John's (NY)",
+      "winner": "Duke",
+      "round": "Elite 8 Appearance"
+    },
+    {
+      "topTeam": "Michigan St",
+      "bottomTeam": "UConn",
+      "winner": "UConn",
+      "round": "Elite 8 Appearance"
+    },
+    {
+      "topTeam": "Iowa",
+      "bottomTeam": "Nebraska",
+      "winner": "Iowa",
+      "round": "Elite 8 Appearance"
+    },
+    {
+      "topTeam": "Illinois",
+      "bottomTeam": "Houston",
+      "winner": "Illinois",
+      "round": "Elite 8 Appearance"
+    },
+    {
+      "topTeam": "Arizona",
+      "bottomTeam": "Arkansas",
+      "winner": "Arizona",
+      "round": "Elite 8 Appearance"
+    },
+    {
+      "topTeam": "Texas",
+      "bottomTeam": "Purdue",
+      "winner": "Purdue",
+      "round": "Elite 8 Appearance"
+    },
+    {
+      "topTeam": "Michigan",
+      "bottomTeam": "Alabama",
+      "winner": "Michigan",
+      "round": "Elite 8 Appearance"
+    },
+    {
+      "topTeam": "Tennessee",
+      "bottomTeam": "Iowa St",
+      "winner": "Tennessee",
+      "round": "Elite 8 Appearance"
+    },
+    {
+      "topTeam": "Duke",
+      "bottomTeam": "UConn",
+      "winner": "UConn",
+      "round": "Final Four Appearance"
+    },
+    {
+      "topTeam": "Iowa",
+      "bottomTeam": "Illinois",
+      "winner": "Illinois",
+      "round": "Final Four Appearance"
+    },
+    {
+      "topTeam": "Arizona",
+      "bottomTeam": "Purdue",
+      "winner": "Arizona",
+      "round": "Final Four Appearance"
+    },
+    {
+      "topTeam": "Michigan",
+      "bottomTeam": "Tennessee",
+      "winner": "Michigan",
+      "round": "Final Four Appearance"
+    },
+    {
+      "topTeam": "UConn",
+      "bottomTeam": "Illinois",
+      "winner": "UConn",
+      "round": "Championship Appearance"
+    },
+    {
+      "topTeam": "Arizona",
+      "bottomTeam": "Michigan",
+      "winner": "Michigan",
+      "round": "Championship Appearance"
+    },
+    {
+      "topTeam": "UConn",
+      "bottomTeam": "Michigan",
+      "winner": null,
+      "round": "Champion"
+    }
+  ],
+  "teams": [
+    {
+      "name": "Duke",
+      "seed": 1,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Arizona",
+      "seed": 1,
+      "owner": "Berkman"
+    },
+    {
+      "name": "Michigan",
+      "seed": 1,
+      "owner": "Cory"
+    },
+    {
+      "name": "Florida",
+      "seed": 1,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Houston",
+      "seed": 2,
+      "owner": "Cory"
+    },
+    {
+      "name": "UConn",
+      "seed": 2,
+      "owner": "Cory"
+    },
+    {
+      "name": "Iowa St",
+      "seed": 2,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Purdue",
+      "seed": 2,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Michigan St",
+      "seed": 3,
+      "owner": "Berkman"
+    },
+    {
+      "name": "Illinois",
+      "seed": 3,
+      "owner": "Berkman"
+    },
+    {
+      "name": "Gonzaga",
+      "seed": 3,
+      "owner": "Berkman"
+    },
+    {
+      "name": "Virginia",
+      "seed": 3,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Nebraska",
+      "seed": 4,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Alabama",
+      "seed": 4,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Kansas",
+      "seed": 4,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Arkansas",
+      "seed": 4,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Vanderbilt",
+      "seed": 5,
+      "owner": "Seiden"
+    },
+    {
+      "name": "St John's (NY)",
+      "seed": 5,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Texas Tech",
+      "seed": 5,
+      "owner": "Cory"
+    },
+    {
+      "name": "Wisconsin",
+      "seed": 5,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Tennessee",
+      "seed": 6,
+      "owner": "Berkman"
+    },
+    {
+      "name": "North Carolina",
+      "seed": 6,
+      "owner": "Cory"
+    },
+    {
+      "name": "Louisville",
+      "seed": 6,
+      "owner": "Cory"
+    },
+    {
+      "name": "BYU",
+      "seed": 6,
+      "owner": "Cory"
+    },
+    {
+      "name": "Kentucky",
+      "seed": 7,
+      "owner": "Berkman"
+    },
+    {
+      "name": "Saint Mary's (CA)",
+      "seed": 7,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Miami (FL)",
+      "seed": 7,
+      "owner": "Berkman"
+    },
+    {
+      "name": "UCLA",
+      "seed": 7,
+      "owner": "Berkman"
+    },
+    {
+      "name": "Clemson",
+      "seed": 8,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Villanova",
+      "seed": 8,
+      "owner": "Cory"
+    },
+    {
+      "name": "Ohio St",
+      "seed": 8,
+      "owner": "Cory"
+    },
+    {
+      "name": "Georgia",
+      "seed": 8,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Utah St",
+      "seed": 9,
+      "owner": "Seiden"
+    },
+    {
+      "name": "TCU",
+      "seed": 9,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Saint Louis",
+      "seed": 9,
+      "owner": "Berkman"
+    },
+    {
+      "name": "Iowa",
+      "seed": 9,
+      "owner": "Cory"
+    },
+    {
+      "name": "Santa Clara",
+      "seed": 10,
+      "owner": "Shuster"
+    },
+    {
+      "name": "UCF",
+      "seed": 10,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Missouri",
+      "seed": 10,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Texas A&M",
+      "seed": 10,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Texas",
+      "seed": 11,
+      "owner": "Seiden"
+    },
+    {
+      "name": "SMU",
+      "seed": 11,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Miami (OH)",
+      "seed": 11,
+      "owner": "Shuster"
+    },
+    {
+      "name": "VCU",
+      "seed": 11,
+      "owner": "Berkman"
+    },
+    {
+      "name": "South Fla",
+      "seed": 11,
+      "owner": "Berkman"
+    },
+    {
+      "name": "McNeese",
+      "seed": 12,
+      "owner": "Cory"
+    },
+    {
+      "name": "Akron",
+      "seed": 12,
+      "owner": "Berkman"
+    },
+    {
+      "name": "UNI",
+      "seed": 12,
+      "owner": "Seiden"
+    },
+    {
+      "name": "High Point",
+      "seed": 12,
+      "owner": "Cory"
+    },
+    {
+      "name": "California Baptist",
+      "seed": 13,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Hofstra",
+      "seed": 13,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Troy",
+      "seed": 13,
+      "owner": "Berkman"
+    },
+    {
+      "name": "Hawaii",
+      "seed": 13,
+      "owner": "Cory"
+    },
+    {
+      "name": "North Dakota St",
+      "seed": 14,
+      "owner": "Berkman"
+    },
+    {
+      "name": "Penn",
+      "seed": 14,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Wright St",
+      "seed": 14,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Kennesaw St",
+      "seed": 14,
+      "owner": "Cory"
+    },
+    {
+      "name": "Tennessee St",
+      "seed": 15,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Idaho",
+      "seed": 15,
+      "owner": "Cory"
+    },
+    {
+      "name": "Furman",
+      "seed": 15,
+      "owner": "Berkman"
+    },
+    {
+      "name": "Queens (NC)",
+      "seed": 15,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Siena",
+      "seed": 16,
+      "owner": "Cory"
+    },
+    {
+      "name": "LIU",
+      "seed": 16,
+      "owner": "Seiden"
+    },
+    {
+      "name": "Howard",
+      "seed": 16,
+      "owner": "Shuster"
+    },
+    {
+      "name": "Prairie View",
+      "seed": 16,
+      "owner": "Berkman"
+    }
+  ],
+  "draft": {
+    "order": [
+      "Berkman",
+      "Cory",
+      "Shuster",
+      "Seiden"
+    ],
+    "snake": true,
+    "locked": false,
+    "currentPickNumber": 1,
+    "currentPickIndex": 0,
+    "history": []
+  }
+}

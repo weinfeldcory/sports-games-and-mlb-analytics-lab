@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "python3 -m http.server 5173",
+    "dev": "node server/server.js",
     "test": "node tests/scoring.test.mjs"
   }
 }
