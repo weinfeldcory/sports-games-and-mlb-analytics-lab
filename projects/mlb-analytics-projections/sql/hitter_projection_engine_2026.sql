@@ -263,6 +263,9 @@ blended AS (
         pp.player_name,
         pp.recent_team AS team_2025,
         pp.target_age_2026,
+        pp.age_bucket,
+        pp.archetype,
+        pp.position_bucket,
         pp.is_catcher_profile,
         pp.weighted_pa_sample,
         LEAST(pp.weighted_pa_sample / 900.0, 0.9) AS playing_time_reliability,
@@ -523,7 +526,37 @@ projected_components AS (
         player_name,
         team_2025,
         target_age_2026 AS projected_age,
+        age_bucket,
+        archetype,
+        position_bucket,
+        is_catcher_profile,
         weighted_pa_sample,
+        playing_time_reliability,
+        discipline_reliability,
+        contact_reliability,
+        power_reliability,
+        speed_reliability,
+        defense_reliability,
+        durability_age_factor,
+        power_age_factor,
+        contact_age_factor,
+        speed_age_factor,
+        defense_age_factor,
+        projected_games_base,
+        projected_pa_per_game_base,
+        projected_bb_rate_base,
+        projected_k_rate_base,
+        projected_hr_rate_base,
+        projected_double_rate_base,
+        projected_triple_rate_base,
+        projected_sb_rate_base,
+        projected_babip_base,
+        projected_bsr_per_pa_base,
+        projected_def_per_pa_base,
+        projected_pos_per_pa_base,
+        projected_barrel_rate_base,
+        projected_hard_hit_rate_base,
+        projected_xwoba_base,
         LEAST(
             1.20,
             1.0
@@ -631,7 +664,11 @@ final_projection AS (
 league_context AS (
     SELECT
         AVG(projected_woba) AS league_projected_woba,
-        AVG(projected_xwoba) AS league_projected_xwoba
+        AVG(projected_xwoba) AS league_projected_xwoba,
+        AVG(projected_bb_rate) AS league_projected_bb_rate,
+        AVG(projected_k_rate) AS league_projected_k_rate,
+        AVG(projected_hr_rate) AS league_projected_hr_rate,
+        AVG(projected_sb_rate) AS league_projected_sb_rate
     FROM final_projection
 ),
 scored AS (
@@ -640,7 +677,38 @@ scored AS (
         fp.player_name,
         fp.team_2025,
         fp.projected_age,
+        fp.age_bucket,
+        fp.archetype,
+        fp.position_bucket,
+        fp.is_catcher_profile,
         fp.weighted_pa_sample,
+        fp.playing_time_reliability,
+        fp.discipline_reliability,
+        fp.contact_reliability,
+        fp.power_reliability,
+        fp.speed_reliability,
+        fp.defense_reliability,
+        fp.durability_age_factor,
+        fp.power_age_factor,
+        fp.contact_age_factor,
+        fp.speed_age_factor,
+        fp.defense_age_factor,
+        fp.projected_games_base,
+        fp.projected_pa_per_game_base,
+        fp.projected_bb_rate_base,
+        fp.projected_k_rate_base,
+        fp.projected_hr_rate_base,
+        fp.projected_double_rate_base,
+        fp.projected_triple_rate_base,
+        fp.projected_sb_rate_base,
+        fp.projected_babip_base,
+        fp.projected_bsr_per_pa_base,
+        fp.projected_def_per_pa_base,
+        fp.projected_pos_per_pa_base,
+        fp.projected_barrel_rate_base,
+        fp.projected_hard_hit_rate_base,
+        fp.projected_xwoba_base,
+        fp.elite_power_uplift,
         fp.projected_games,
         fp.projected_pa,
         fp.projected_walks,
@@ -670,6 +738,24 @@ scored AS (
         (
             0.65 * fp.projected_woba + 0.35 * fp.projected_xwoba
         ) AS projected_talent_woba,
+        100 * (
+            0.65 * fp.projected_woba + 0.35 * fp.projected_xwoba
+        ) / NULLIF(lc.league_projected_woba, 0) AS prior_talent_score,
+        100 * (
+            0.45 * fp.projected_hr_rate / NULLIF(lc.league_projected_hr_rate, 0)
+            + 0.35 * fp.projected_barrel_rate / NULLIF(0.124, 0)
+            + 0.20 * fp.projected_hard_hit_rate / NULLIF(0.481, 0)
+        ) AS prior_power_score,
+        100 * (
+            0.55 * fp.projected_bb_rate / NULLIF(lc.league_projected_bb_rate, 0)
+            + 0.45 * lc.league_projected_k_rate / NULLIF(fp.projected_k_rate, 0)
+        ) AS prior_plate_discipline_score,
+        100 * (
+            0.60 * fp.projected_sb_rate / NULLIF(lc.league_projected_sb_rate, 0)
+            + 0.40 * GREATEST(0.5, 1 + (fp.projected_baserunning_runs / NULLIF(fp.projected_pa, 0)) * 40)
+        ) AS prior_speed_score,
+        LEAST(140.0, GREATEST(55.0, 100 + fp.projected_position_runs / NULLIF(fp.projected_pa, 0) * 600 * 3.0)) AS prior_position_value_score,
+        LEAST(140.0, GREATEST(45.0, 100 * fp.projected_pa / 600.0)) AS prior_playing_time_score,
         (
             (
                 (

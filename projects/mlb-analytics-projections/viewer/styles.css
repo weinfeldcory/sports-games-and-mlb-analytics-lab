@@ -1,12 +1,13 @@
 :root {
   --bg: #eef2f6;
-  --panel: rgba(255, 255, 255, 0.86);
+  --panel: rgba(255, 255, 255, 0.88);
   --panel-strong: #ffffff;
   --ink: #112033;
   --muted: #5d6a78;
   --line: rgba(17, 32, 51, 0.1);
   --accent: #0f766e;
   --accent-2: #2563eb;
+  --accent-3: #b45309;
   --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
   --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.05);
 }
@@ -26,7 +27,7 @@ body {
 }
 
 .page {
-  width: min(1320px, calc(100vw - 32px));
+  width: min(1380px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 20px 0 40px;
 }
@@ -48,22 +49,30 @@ body {
   font-weight: 700;
 }
 
-h1 {
+h1,
+h2 {
   margin: 0;
-  font-size: clamp(28px, 4vw, 46px);
-  line-height: 0.98;
   letter-spacing: -0.04em;
 }
 
+h1 {
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 0.98;
+}
+
+h2 {
+  font-size: 24px;
+}
+
 .lede {
-  max-width: 680px;
+  max-width: 720px;
   margin: 8px 0 0;
   color: var(--muted);
   font-size: 15px;
 }
 
 .hero-note {
-  min-width: 170px;
+  min-width: 190px;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -81,15 +90,30 @@ h1 {
   margin-bottom: 4px;
 }
 
+.board-section,
 .controls,
 .summary,
 .team-panel,
+.roster-builder,
 .table-wrap {
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--panel);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
+}
+
+.board-section {
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
 .controls {
@@ -123,7 +147,7 @@ h1 {
 
 .summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   padding: 12px;
   margin-bottom: 12px;
@@ -158,13 +182,14 @@ h1 {
   font-size: 12px;
 }
 
-.table-wrap {
-  overflow: auto;
-}
-
 .team-panel {
   padding: 14px;
   margin-bottom: 12px;
+}
+
+.roster-builder {
+  padding: 14px;
+  margin-bottom: 14px;
 }
 
 .team-panel-header {
@@ -175,17 +200,138 @@ h1 {
   margin-bottom: 12px;
 }
 
-.team-panel-header h2 {
-  margin: 0;
-  font-size: 24px;
-  letter-spacing: -0.04em;
-}
-
 .team-panel-copy {
-  max-width: 460px;
+  max-width: 520px;
   margin: 0;
   color: var(--muted);
   font-size: 13px;
+}
+
+.roster-builder-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.roster-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(340px, 1.1fr);
+  gap: 12px;
+}
+
+.roster-slots-panel,
+.roster-summary-panel {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(29, 42, 53, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 248, 252, 0.92));
+}
+
+.roster-slots-panel h3,
+.roster-summary-panel h3,
+.team-leaders h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.roster-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.slot-card {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px dashed rgba(17, 32, 51, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+  min-height: 98px;
+}
+
+.slot-card.filled {
+  border-style: solid;
+  background: linear-gradient(180deg, rgba(15, 118, 110, 0.08), rgba(255, 255, 255, 0.94));
+}
+
+.slot-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.slot-player {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.slot-meta,
+.slot-empty {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.slot-remove {
+  margin-top: 8px;
+  height: 30px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 10px;
+  background: rgba(17, 32, 51, 0.08);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.roster-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.roster-assumption {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(180, 83, 9, 0.06);
+  border: 1px solid rgba(180, 83, 9, 0.12);
+}
+
+.roster-team-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat-chip {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid rgba(29, 42, 53, 0.08);
+}
+
+.stat-chip-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.stat-chip-value {
+  font-size: 18px;
+  letter-spacing: -0.03em;
 }
 
 .team-metrics {
@@ -193,12 +339,6 @@ h1 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 12px;
-}
-
-.team-leaders h3 {
-  margin: 0 0 10px;
-  font-size: 15px;
-  letter-spacing: 0.01em;
 }
 
 .team-leaders-list {
@@ -237,6 +377,10 @@ h1 {
 .leader-line {
   color: var(--muted);
   font-size: 12px;
+}
+
+.table-wrap {
+  overflow: auto;
 }
 
 table {
@@ -289,21 +433,53 @@ tbody tr:hover {
   color: var(--muted);
 }
 
+.pick-button {
+  height: 30px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 10px;
+  background: var(--accent-2);
+  color: white;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pick-button.is-selected {
+  background: rgba(15, 118, 110, 0.14);
+  color: var(--accent);
+}
+
+.pick-button.is-disabled {
+  background: rgba(17, 32, 51, 0.08);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+@media (max-width: 1120px) {
+  .roster-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 960px) {
   .hero,
   .controls,
   .summary,
   .team-metrics,
-  .team-leaders-list {
+  .team-leaders-list,
+  .roster-summary-grid,
+  .roster-team-stats,
+  .roster-slots {
     grid-template-columns: 1fr;
     display: grid;
   }
 
-  .hero {
-    align-items: start;
-  }
-
-  .team-panel-header {
+  .hero,
+  .team-panel-header,
+  .roster-builder-header,
+  .section-header {
     align-items: start;
     flex-direction: column;
   }

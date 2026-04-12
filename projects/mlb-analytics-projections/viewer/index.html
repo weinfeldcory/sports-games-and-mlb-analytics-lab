@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hitter Projection Engine 2025</title>
+    <title>MLB Team-Building Viewer</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -11,94 +11,218 @@
       <section class="hero">
         <div>
           <p class="eyebrow">MLB Analytics Lab</p>
-          <h1>Hitter Projections vs 2026 Current</h1>
+          <h1>Roster Construction Board</h1>
           <p class="lede">
-            Local viewer for preseason projections, current season-to-date stats, and 162-game pace.
+            Traceable hitter and pitcher valuations blending preseason priors with current-season signals for roster
+            construction, role fit, and team-level season estimates.
           </p>
         </div>
         <div class="hero-note">
-          <span class="hero-note-label">Default sort</span>
-          <strong>Projected WAR Proxy</strong>
+          <span class="hero-note-label">Season Model</span>
+          <strong>Runs Scored / Runs Allowed</strong>
         </div>
       </section>
 
-      <section class="controls">
-        <label>
-          <span>Team</span>
-          <select id="team-filter">
-            <option value="ALL">All Teams</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Player Search</span>
-          <input id="search-filter" type="search" placeholder="Judge, Soto, Raleigh..." />
-        </label>
-
-        <label>
-          <span>Minimum PA</span>
-          <input id="min-pa-filter" type="number" min="0" step="10" value="0" placeholder="0" />
-        </label>
-
-        <label>
-          <span>Sort By</span>
-          <select id="sort-key">
-            <option value="projected_value_war_proxy">Projected WAR Proxy</option>
-            <option value="current_woba">Current wOBA</option>
-            <option value="pace_home_runs_162">162G HR Pace</option>
-            <option value="pace_stolen_bases_162">162G SB Pace</option>
-            <option value="pace_pa_162">162G PA Pace</option>
-            <option value="projected_home_runs">Projected HR</option>
-            <option value="projected_stolen_bases">Projected SB</option>
-          </select>
-        </label>
-      </section>
-
-      <section class="summary" id="summary-cards"></section>
-
-      <section class="team-panel" id="team-panel">
-        <div class="team-panel-header compact-header">
+      <section class="roster-builder">
+        <div class="roster-builder-header">
           <div>
-            <p class="eyebrow">Team Snapshot</p>
-            <h2 id="team-title">All Teams</h2>
+            <p class="eyebrow">Roster Builder</p>
+            <h2>Build A Full Team Shell</h2>
+            <p class="team-panel-copy">
+              Select 13 hitters and 13 pitchers. The season estimate scales your selected hitters to a 6,200 PA team
+              offense and your selected pitchers to a 1,458 inning staff, then applies a 1.83 Pythagorean exponent.
+            </p>
           </div>
-          <p class="team-panel-copy" id="team-copy">
-            Select a team to see aggregate projected output and the top projected bats.
-          </p>
+          <div class="hero-note">
+            <span class="hero-note-label">Season Estimator</span>
+            <strong id="roster-status">0 / 13 hitters · 0 / 13 pitchers</strong>
+          </div>
         </div>
 
-        <div class="team-metrics" id="team-metrics"></div>
+        <div class="roster-layout">
+          <section class="roster-slots-panel">
+            <h3>Hitter Slots</h3>
+            <div class="roster-slots" id="roster-hitter-slots"></div>
+          </section>
 
-        <div class="team-leaders">
-          <h3>Top Bats</h3>
-          <div class="team-leaders-list" id="team-leaders-list"></div>
+          <section class="roster-slots-panel">
+            <h3>Pitcher Slots</h3>
+            <div class="roster-slots" id="roster-pitcher-slots"></div>
+          </section>
+
+          <section class="roster-summary-panel">
+            <h3>Projected Season Snapshot</h3>
+            <div class="roster-summary-grid" id="roster-summary-cards"></div>
+            <div class="roster-assumption" id="roster-assumption"></div>
+            <div class="roster-team-stats" id="roster-team-stats"></div>
+          </section>
         </div>
       </section>
 
-      <section class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>Team</th>
-              <th>Pos</th>
-              <th>Proj WAR</th>
-              <th>Curr G</th>
-              <th>Curr PA</th>
-              <th>Curr wOBA</th>
-              <th>162G PA</th>
-              <th>Proj PA</th>
-              <th>PA Diff</th>
-              <th>162G HR</th>
-              <th>Proj HR</th>
-              <th>HR Diff</th>
-              <th>162G SB</th>
-              <th>Proj SB</th>
-              <th>SB Diff</th>
-            </tr>
-          </thead>
-          <tbody id="projection-rows"></tbody>
-        </table>
+      <section class="board-section">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Hitter Board</p>
+            <h2>Offense And Lineup Fit</h2>
+          </div>
+        </div>
+
+        <section class="controls">
+          <label>
+            <span>Team</span>
+            <select id="team-filter">
+              <option value="ALL">All Teams</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Player Search</span>
+            <input id="search-filter" type="search" placeholder="Judge, Soto, Raleigh..." />
+          </label>
+
+          <label>
+            <span>Minimum PA</span>
+            <input id="min-pa-filter" type="number" min="0" step="10" value="0" placeholder="0" />
+          </label>
+
+          <label>
+            <span>Sort By</span>
+            <select id="sort-key">
+              <option value="team_building_value_score">Team-Building Value</option>
+              <option value="blended_talent_score">Blended Talent</option>
+              <option value="blended_playing_time_score">Blended Playing Time</option>
+              <option value="starter_probability_score">Starter Probability</option>
+              <option value="upside_score">Upside</option>
+              <option value="floor_score">Floor</option>
+              <option value="stability_score">Stability</option>
+              <option value="platoon_risk_score">Platoon Risk</option>
+              <option value="projected_value_war_proxy">Projected WAR Proxy</option>
+              <option value="current_woba">Current wOBA</option>
+              <option value="pace_home_runs_162">162G HR Pace</option>
+              <option value="pace_stolen_bases_162">162G SB Pace</option>
+              <option value="pace_pa_162">162G PA Pace</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="summary" id="summary-cards"></section>
+
+        <section class="team-panel" id="team-panel">
+          <div class="team-panel-header compact-header">
+            <div>
+              <p class="eyebrow">Hitter Snapshot</p>
+              <h2 id="team-title">All Hitter Pools</h2>
+            </div>
+            <p class="team-panel-copy" id="team-copy">
+              Select a team to see aggregate team-building value and the strongest lineup fits.
+            </p>
+          </div>
+
+          <div class="team-metrics" id="team-metrics"></div>
+
+          <div class="team-leaders">
+            <h3>Top Bats</h3>
+            <div class="team-leaders-list" id="team-leaders-list"></div>
+          </div>
+        </section>
+
+        <section class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pick</th>
+                <th>Player</th>
+                <th>Team</th>
+                <th>Role</th>
+                <th>Pos</th>
+                <th>Team Build</th>
+                <th>Talent</th>
+                <th>PT</th>
+                <th>Upside</th>
+                <th>Floor</th>
+                <th>Starter</th>
+                <th>Stability</th>
+                <th>Platoon Risk</th>
+                <th>Curr wOBA</th>
+                <th>Proj wOBA</th>
+                <th>162G PA</th>
+              </tr>
+            </thead>
+            <tbody id="projection-rows"></tbody>
+          </table>
+        </section>
+      </section>
+
+      <section class="board-section">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Pitcher Board</p>
+            <h2>Run Prevention And Staff Fit</h2>
+          </div>
+        </div>
+
+        <section class="controls">
+          <label>
+            <span>Team</span>
+            <select id="pitcher-team-filter">
+              <option value="ALL">All Teams</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Pitcher Search</span>
+            <input id="pitcher-search-filter" type="search" placeholder="Skenes, Skubal, Clase..." />
+          </label>
+
+          <label>
+            <span>Minimum IP</span>
+            <input id="pitcher-min-ip-filter" type="number" min="0" step="5" value="0" placeholder="0" />
+          </label>
+
+          <label>
+            <span>Sort By</span>
+            <select id="pitcher-sort-key">
+              <option value="team_building_value_score">Team-Building Value</option>
+              <option value="blended_run_prevention_score">Run Prevention</option>
+              <option value="blended_pitch_quality_score">Pitch Quality</option>
+              <option value="blended_playing_time_score">Playing Time</option>
+              <option value="upside_score">Upside</option>
+              <option value="floor_score">Floor</option>
+              <option value="projected_war">Projected WAR</option>
+              <option value="projected_era">Projected ERA</option>
+              <option value="projected_ip">Projected IP</option>
+              <option value="pace_ip_162">162G IP Pace</option>
+              <option value="pace_runs_allowed_162">162G Runs Allowed Pace</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="summary" id="pitcher-summary-cards"></section>
+
+        <section class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pick</th>
+                <th>Pitcher</th>
+                <th>Team</th>
+                <th>Role</th>
+                <th>Team Build</th>
+                <th>Run Prev</th>
+                <th>Pitch Quality</th>
+                <th>PT</th>
+                <th>Upside</th>
+                <th>Floor</th>
+                <th>Proj ERA</th>
+                <th>Proj IP</th>
+                <th>Proj K</th>
+                <th>Curr ERA</th>
+                <th>162G IP</th>
+              </tr>
+            </thead>
+            <tbody id="pitcher-rows"></tbody>
+          </table>
+        </section>
       </section>
     </main>
 
