@@ -1,0 +1,4 @@
+interface:
+  display_name: "Doc Writer"
+  short_description: "Draft structured product docs"
+  default_prompt: "Use $doc-writer to draft a problem brief from my notes."
