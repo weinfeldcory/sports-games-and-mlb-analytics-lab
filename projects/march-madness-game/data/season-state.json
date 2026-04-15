@@ -1,6 +1,6 @@
 {
   "season": 2026,
-  "updatedAt": "2026-04-12T17:57:49.134Z",
+  "updatedAt": "2026-04-15T01:20:22.076Z",
   "owners": [
     "Berkman",
     "Cory",
@@ -529,6 +529,346 @@
     {
       "name": "Duke",
       "seed": 1,
+      "owner": null
+    },
+    {
+      "name": "Arizona",
+      "seed": 1,
+      "owner": null
+    },
+    {
+      "name": "Michigan",
+      "seed": 1,
+      "owner": null
+    },
+    {
+      "name": "Florida",
+      "seed": 1,
+      "owner": null
+    },
+    {
+      "name": "Houston",
+      "seed": 2,
+      "owner": null
+    },
+    {
+      "name": "UConn",
+      "seed": 2,
+      "owner": null
+    },
+    {
+      "name": "Iowa St",
+      "seed": 2,
+      "owner": null
+    },
+    {
+      "name": "Purdue",
+      "seed": 2,
+      "owner": null
+    },
+    {
+      "name": "Michigan St",
+      "seed": 3,
+      "owner": null
+    },
+    {
+      "name": "Illinois",
+      "seed": 3,
+      "owner": null
+    },
+    {
+      "name": "Gonzaga",
+      "seed": 3,
+      "owner": null
+    },
+    {
+      "name": "Virginia",
+      "seed": 3,
+      "owner": null
+    },
+    {
+      "name": "Nebraska",
+      "seed": 4,
+      "owner": null
+    },
+    {
+      "name": "Alabama",
+      "seed": 4,
+      "owner": null
+    },
+    {
+      "name": "Kansas",
+      "seed": 4,
+      "owner": null
+    },
+    {
+      "name": "Arkansas",
+      "seed": 4,
+      "owner": null
+    },
+    {
+      "name": "Vanderbilt",
+      "seed": 5,
+      "owner": null
+    },
+    {
+      "name": "St John's (NY)",
+      "seed": 5,
+      "owner": null
+    },
+    {
+      "name": "Texas Tech",
+      "seed": 5,
+      "owner": null
+    },
+    {
+      "name": "Wisconsin",
+      "seed": 5,
+      "owner": null
+    },
+    {
+      "name": "Tennessee",
+      "seed": 6,
+      "owner": null
+    },
+    {
+      "name": "North Carolina",
+      "seed": 6,
+      "owner": null
+    },
+    {
+      "name": "Louisville",
+      "seed": 6,
+      "owner": null
+    },
+    {
+      "name": "BYU",
+      "seed": 6,
+      "owner": null
+    },
+    {
+      "name": "Kentucky",
+      "seed": 7,
+      "owner": null
+    },
+    {
+      "name": "Saint Mary's (CA)",
+      "seed": 7,
+      "owner": null
+    },
+    {
+      "name": "Miami (FL)",
+      "seed": 7,
+      "owner": null
+    },
+    {
+      "name": "UCLA",
+      "seed": 7,
+      "owner": null
+    },
+    {
+      "name": "Clemson",
+      "seed": 8,
+      "owner": null
+    },
+    {
+      "name": "Villanova",
+      "seed": 8,
+      "owner": null
+    },
+    {
+      "name": "Ohio St",
+      "seed": 8,
+      "owner": null
+    },
+    {
+      "name": "Georgia",
+      "seed": 8,
+      "owner": null
+    },
+    {
+      "name": "Utah St",
+      "seed": 9,
+      "owner": null
+    },
+    {
+      "name": "TCU",
+      "seed": 9,
+      "owner": null
+    },
+    {
+      "name": "Saint Louis",
+      "seed": 9,
+      "owner": null
+    },
+    {
+      "name": "Iowa",
+      "seed": 9,
+      "owner": null
+    },
+    {
+      "name": "Santa Clara",
+      "seed": 10,
+      "owner": null
+    },
+    {
+      "name": "UCF",
+      "seed": 10,
+      "owner": null
+    },
+    {
+      "name": "Missouri",
+      "seed": 10,
+      "owner": null
+    },
+    {
+      "name": "Texas A&M",
+      "seed": 10,
+      "owner": null
+    },
+    {
+      "name": "Texas",
+      "seed": 11,
+      "owner": null
+    },
+    {
+      "name": "SMU",
+      "seed": 11,
+      "owner": null
+    },
+    {
+      "name": "Miami (OH)",
+      "seed": 11,
+      "owner": null
+    },
+    {
+      "name": "VCU",
+      "seed": 11,
+      "owner": null
+    },
+    {
+      "name": "South Fla",
+      "seed": 11,
+      "owner": null
+    },
+    {
+      "name": "McNeese",
+      "seed": 12,
+      "owner": null
+    },
+    {
+      "name": "Akron",
+      "seed": 12,
+      "owner": null
+    },
+    {
+      "name": "UNI",
+      "seed": 12,
+      "owner": null
+    },
+    {
+      "name": "High Point",
+      "seed": 12,
+      "owner": null
+    },
+    {
+      "name": "California Baptist",
+      "seed": 13,
+      "owner": null
+    },
+    {
+      "name": "Hofstra",
+      "seed": 13,
+      "owner": null
+    },
+    {
+      "name": "Troy",
+      "seed": 13,
+      "owner": null
+    },
+    {
+      "name": "Hawaii",
+      "seed": 13,
+      "owner": null
+    },
+    {
+      "name": "North Dakota St",
+      "seed": 14,
+      "owner": null
+    },
+    {
+      "name": "Penn",
+      "seed": 14,
+      "owner": null
+    },
+    {
+      "name": "Wright St",
+      "seed": 14,
+      "owner": null
+    },
+    {
+      "name": "Kennesaw St",
+      "seed": 14,
+      "owner": null
+    },
+    {
+      "name": "Tennessee St",
+      "seed": 15,
+      "owner": null
+    },
+    {
+      "name": "Idaho",
+      "seed": 15,
+      "owner": null
+    },
+    {
+      "name": "Furman",
+      "seed": 15,
+      "owner": null
+    },
+    {
+      "name": "Queens (NC)",
+      "seed": 15,
+      "owner": null
+    },
+    {
+      "name": "Siena",
+      "seed": 16,
+      "owner": null
+    },
+    {
+      "name": "LIU",
+      "seed": 16,
+      "owner": null
+    },
+    {
+      "name": "Howard",
+      "seed": 16,
+      "owner": null
+    },
+    {
+      "name": "Prairie View",
+      "seed": 16,
+      "owner": null
+    }
+  ],
+  "draft": {
+    "order": [
+      "Berkman",
+      "Cory",
+      "Shuster",
+      "Seiden"
+    ],
+    "snake": true,
+    "locked": false,
+    "currentPickNumber": 1,
+    "currentPickIndex": 0,
+    "history": []
+  },
+  "baselineTeams": [
+    {
+      "name": "Duke",
+      "seed": 1,
       "owner": "Berkman"
     },
     {
@@ -851,24 +1191,5 @@
       "seed": 16,
       "owner": "Berkman"
     }
-  ],
-  "draft": {
-    "order": [
-      "Berkman",
-      "Cory",
-      "Shuster",
-      "Seiden"
-    ],
-    "snake": true,
-    "locked": false,
-    "currentPickNumber": 2,
-    "currentPickIndex": 1,
-    "history": [
-      {
-        "pickNumber": 1,
-        "teamName": "Duke",
-        "owner": "Berkman"
-      }
-    ]
-  }
+  ]
 }

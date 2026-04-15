@@ -28,6 +28,7 @@ export function parseTeamsText(text) {
 export function createUiState(appData) {
   return {
     manualOwner: appData.draft.currentOwner || appData.owners[0] || "",
+    activeWorkspace: "paths",
     setupMessage: "",
     setupError: "",
     savingSetup: false

@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f1720" />
     <title>Busy March Madness</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
@@ -16,20 +13,43 @@
         <p class="eyebrow">2026 Busy March Madness</p>
         <h1>Draft room, scoring lab, and live pool command center.</h1>
         <p>
-          This app is evolving from a spreadsheet companion into the actual product:
-          run the draft here, tune the scoring system here, and eventually track the
-          whole tournament here without relying on Sheets.
+          Follow the board, make picks, and track the pool from a clean live view built
+          for draft night and tournament week.
         </p>
         <p id="data-status" class="hero-status">Loading live sheet data…</p>
+        <div class="hero-actions" aria-label="Primary actions">
+          <button type="button" data-nav-target="draft-section">Open Draft Room</button>
+          <button type="button" data-nav-target="workspace-section" data-nav-surface="standings">View Standings</button>
+        </div>
       </section>
 
       <nav class="quick-nav panel" aria-label="App sections">
-        <a href="#draft-section">Draft Room</a>
-        <a href="#paths-section">Paths</a>
-        <a href="#scoring-section">Scoring</a>
-        <a href="#standings-section">Standings</a>
-        <a href="#teams-section">Teams</a>
+        <button type="button" data-nav-target="overview-section">Overview</button>
+        <button type="button" data-nav-target="draft-section">Draft Room</button>
+        <button type="button" data-nav-target="workspace-section" data-nav-surface="standings">Standings</button>
+        <button type="button" data-nav-target="workspace-section" data-nav-surface="paths">Paths</button>
+        <button type="button" data-nav-target="workspace-section" data-nav-surface="teams">Teams</button>
+        <button type="button" data-nav-target="workspace-section" data-nav-surface="scoring">Scoring</button>
+        <button type="button" data-nav-target="workspace-section" data-nav-surface="team-table">Team Detail</button>
       </nav>
+
+      <section id="overview-section" class="summary-grid">
+        <div class="panel focus-strip">
+          <div class="section-title">
+            <h2>Overview</h2>
+            <p>Short version first: who leads, what is left, and where to go next.</p>
+          </div>
+          <div id="overview"></div>
+        </div>
+
+        <div class="panel standings-stage">
+          <div class="section-title">
+            <h2>Standings Snapshot</h2>
+            <p>Current points, realistic ceiling, and expected finish.</p>
+          </div>
+          <div id="standings"></div>
+        </div>
+      </section>
 
       <section id="draft-section" class="panel draft-stage">
         <div class="section-title">
@@ -39,105 +59,69 @@
         <div id="draft-room"></div>
       </section>
 
-      <section class="summary-grid">
-        <div class="panel focus-strip">
-          <div class="section-title">
-            <h2>Current Focus</h2>
-            <p>What this build is trying to accomplish right now.</p>
+      <section id="workspace-section" class="panel workspace-stage">
+        <div class="section-title">
+          <h2>Details</h2>
+          <p>Deeper standings, paths, scoring, and team views.</p>
+        </div>
+        <div class="workspace-tabs" aria-label="Detail surfaces">
+          <button type="button" data-workspace="paths">Paths</button>
+          <button type="button" data-workspace="teams">Teams</button>
+          <button type="button" data-workspace="standings">Standings</button>
+          <button type="button" data-workspace="scoring">Scoring</button>
+          <button type="button" data-workspace="team-table">Team Detail</button>
+        </div>
+
+        <div id="workspace-panel-paths" class="workspace-panel">
+          <div class="section-title workspace-head">
+            <h2>Championship Paths</h2>
+            <p>Plain-English view of the remaining results each owner most likely needs.</p>
           </div>
-          <div class="focus-grid">
-            <article class="focus-card">
-              <span class="focus-label">Now</span>
-              <h3>Run the draft in-app</h3>
-              <p>Commissioner controls, current pick flow, undo, lock state, and backend persistence.</p>
-            </article>
-            <article class="focus-card">
-              <span class="focus-label">Next</span>
-              <h3>Own season setup</h3>
-              <p>Owners, teams, scoring matrix, and yearly reset should all originate here instead of in Sheets.</p>
-            </article>
-            <article class="focus-card">
-              <span class="focus-label">Later</span>
-              <h3>Replace spreadsheet scoring</h3>
-              <p>Ingest live tournament data directly and make this app the single source of truth.</p>
-            </article>
+          <div id="paths"></div>
+        </div>
+
+        <div id="workspace-panel-teams" class="workspace-panel">
+          <div class="section-title workspace-head">
+            <h2>Owned Teams</h2>
+            <p>Grouped by owner, with points and remaining expected value.</p>
           </div>
+          <div id="teams"></div>
         </div>
 
-        <div class="panel standings-stage">
-          <div class="section-title">
-            <h2>Standings</h2>
-            <p>Current points, realistic ceiling, and expected finish.</p>
+        <div id="workspace-panel-standings" class="workspace-panel">
+          <div class="section-title workspace-head">
+            <h2>Standings Detail</h2>
+            <p>Full current, expected, and alternate scoring comparison.</p>
           </div>
-          <div id="standings"></div>
+          <div id="standings-detail"></div>
         </div>
+
+        <div id="workspace-panel-scoring" class="workspace-panel">
+          <div class="section-title workspace-head">
+            <h2>Scoring Matrix</h2>
+            <p>Current rules, exact equal-EV scoring, and a constrained practical variant.</p>
+          </div>
+          <div id="matrix"></div>
+        </div>
+
+        <div id="workspace-panel-team-table" class="workspace-panel">
+          <div class="section-title workspace-head">
+            <h2>Team Detail</h2>
+            <p>Sortable data model next; raw table for now.</p>
+          </div>
+          <div id="team-table"></div>
+        </div>
+
       </section>
 
-      <section id="paths-section" class="panel">
-        <div class="section-title">
-          <h2>Championship Paths</h2>
-          <p>Plain-English view of the remaining results each owner most likely needs.</p>
-        </div>
-        <div id="paths"></div>
-      </section>
-
-      <section id="scoring-section" class="panel">
-        <div class="section-title">
-          <h2>Scoring Matrix</h2>
-          <p>Current rules, fairness diagnostics, and optimized redesign candidates.</p>
-        </div>
-        <div id="matrix"></div>
-      </section>
-
-      <section id="teams-section" class="panel">
-        <div class="section-title">
-          <h2>Owned Teams</h2>
-          <p>Grouped by owner, with points and remaining expected value.</p>
-        </div>
-        <div id="teams"></div>
-      </section>
-
-      <section class="panel product-scope">
-        <div class="section-title">
-          <h2>Desired Product Scope</h2>
-          <p>The target functionality set we are building toward.</p>
-        </div>
-        <div class="scope-grid">
-          <article class="scope-card">
-            <h3>Commissioner</h3>
-            <p>Create seasons, configure owners, import the field, control draft order, lock picks, undo mistakes, and reset the pool.</p>
-          </article>
-          <article class="scope-card">
-            <h3>Participants</h3>
-            <p>See the board, understand whose turn it is, watch picks land live, and follow standings without needing a spreadsheet tab.</p>
-          </article>
-          <article class="scope-card">
-            <h3>Analytics</h3>
-            <p>Compare scoring systems, inspect fairness metrics, understand max paths, and reason about live value by team and by owner.</p>
-          </article>
-          <article class="scope-card">
-            <h3>Data</h3>
-            <p>Own draft state, season config, scoring rules, and eventually live tournament ingestion through the app backend.</p>
-          </article>
-        </div>
-      </section>
-
-      <section id="standings-section" class="panel">
-        <div class="section-title">
-          <h2>Team Detail</h2>
-          <p>Sortable data model next; raw table for now.</p>
-        </div>
-        <div id="team-table"></div>
-      </section>
-
-      <section id="setup-section" class="panel admin-panel">
+      <section class="panel admin-panel">
         <details>
           <summary>
-            <span>Admin</span>
+            <span>Commissioner Setup</span>
             <small>Season setup and commissioner-only configuration</small>
           </summary>
           <div class="admin-panel-body">
-            <div class="section-title">
+            <div class="section-title workspace-head">
               <h2>Season Setup</h2>
               <p>Create next year’s field, owners, and scoring in the app itself.</p>
             </div>

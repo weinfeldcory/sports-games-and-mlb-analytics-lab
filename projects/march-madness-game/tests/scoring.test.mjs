@@ -4,6 +4,7 @@ import {
   deriveOwners,
   constrainedEqualValueScoring,
   equalValueScoring,
+  equalValueDeviations,
   expectedStandings,
   ownerWinningPaths,
   ownerWinOdds,
@@ -37,11 +38,14 @@ const constrained = constrainedEqualValueScoring(currentScoring);
 const currentFairness = scoringFairnessSummary(currentScoring);
 const equalizedFairness = scoringFairnessSummary(equalized);
 const constrainedFairness = scoringFairnessSummary(constrained);
+const equalizedDeviations = equalValueDeviations(equalized);
 
 assert.ok(equalizedFairness.spread < currentFairness.spread);
 assert.ok(equalizedFairness.coefficientOfVariation < currentFairness.coefficientOfVariation);
 assert.ok(constrainedFairness.spread < currentFairness.spread);
 assert.ok(constrainedFairness.coefficientOfVariation < currentFairness.coefficientOfVariation);
+assert.ok(equalizedFairness.spread <= 0.15);
+assert.ok(equalizedDeviations.every((row) => Math.abs(row.deltaFromMean) <= 0.08));
 assert.ok(constrained[16][5] <= 500);
 
 const winOdds = ownerWinOdds(teams, games, currentScoring);

@@ -128,6 +128,7 @@ Epics:
 Ticket candidates:
 
 - Redesign the shell into `Overview`, `Draft Room`, `Standings`, `Teams`, `Scoring Lab`, and `Commissioner`.
+- Consolidate the homepage so the most important live context and actions are visible without long-scroll exploration.
 - Replace long-scroll landing behavior with clearer sections and stronger hierarchy.
 - Promote the draft room into a dedicated high-focus surface.
 - Build a concise overview screen for live tournament context.
@@ -139,6 +140,7 @@ Ticket candidates:
 Definition of done:
 
 - the app is comfortable on phone and desktop
+- the homepage is dramatically faster to scan without dropping meaningful functionality
 - the draft room is the cleanest and most obvious workflow in the product
 - the UI feels calm, polished, and high-trust
 

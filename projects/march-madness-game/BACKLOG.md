@@ -85,6 +85,12 @@ These are the highest-value items for getting to a 2027-ready web product.
   - Key path/watch items
   - Recent picks or updates
 
+- [todo] Consolidate the homepage without feature loss.
+  - Shorten the initial scroll depth substantially.
+  - Move secondary analytics and reference material behind clearer surface boundaries.
+  - Keep top actions and top context visible without forcing users to parse the entire dashboard.
+  - Preserve access to existing information while reducing homepage cognitive load.
+
 - [todo] Finish the Draft Room layout rewrite.
   - Make draft state the dominant experience.
   - Reduce commissioner control clutter.
@@ -224,6 +230,7 @@ These are valuable, but should not distract from getting the core product right 
 ### Cycle 3
 
 - new app shell
+- homepage consolidation
 - overview screen
 - mobile navigation
 - continued Draft Room simplification

@@ -143,20 +143,6 @@ export function teamRows(teams, games, scoring = currentScoring) {
   });
 }
 
-export function probabilityBasedScoring(probabilities = seedProbabilities, roundExpectedValues = [0.8, 1.25, 1.8, 2.5, 3.2, 4], cap = 250) {
-  const probabilityFloors = [0.01, 0.01, 0.006, 0.004, 0.0025, 0.0015];
-  const matrix = {};
-
-  for (let seed = 1; seed <= 16; seed += 1) {
-    matrix[seed] = rounds.map((round, index) => {
-      const probability = Math.max(probabilities[seed][index] || 0, probabilityFloors[index]);
-      return Math.min(cap, Math.max(1, Math.round(roundExpectedValues[index] / probability)));
-    });
-  }
-
-  return matrix;
-}
-
 export function smoothedSeedProbabilities(probabilities = seedProbabilities, probabilityFloors = [0.01, 0.01, 0.006, 0.004, 0.0025, 0.0015]) {
   const matrix = {};
 
@@ -167,34 +153,39 @@ export function smoothedSeedProbabilities(probabilities = seedProbabilities, pro
   return matrix;
 }
 
-export function inferredRoundExpectedValues(scoring = currentScoring, probabilities = seedProbabilities) {
+export function exactEqualValueScoring(
+  probabilities = seedProbabilities,
+  options = {}
+) {
+  const {
+    roundExpectedValues = Array.from({ length: rounds.length }, () => 1),
+    probabilityFloors = [0.01, 0.01, 0.006, 0.004, 0.0025, 0.0015],
+    cap = Infinity
+  } = options;
+
   const smoothed = smoothedSeedProbabilities(probabilities);
-
-  return rounds.map((_, index) => {
-    const values = Array.from({ length: 16 }, (_, offset) => {
-      const seed = offset + 1;
-      return scoring[seed][index] * smoothed[seed][index];
-    }).sort((a, b) => a - b);
-
-    const median = values.length % 2 === 0
-      ? (values[(values.length / 2) - 1] + values[values.length / 2]) / 2
-      : values[Math.floor(values.length / 2)];
-
-    const scarcityMultiplier = 2 ** index;
-    return median * scarcityMultiplier;
-  });
-}
-
-export function equalValueScoring(scoring = currentScoring, probabilities = seedProbabilities, cap = Infinity) {
-  const smoothed = smoothedSeedProbabilities(probabilities);
-  const roundExpectedValues = inferredRoundExpectedValues(scoring, probabilities);
   const matrix = {};
 
   for (let seed = 1; seed <= 16; seed += 1) {
-    matrix[seed] = rounds.map((_, index) => Math.min(cap, Math.max(1, Math.round(roundExpectedValues[index] / smoothed[seed][index]))));
+    matrix[seed] = rounds.map((_, index) => {
+      const probability = Math.max(smoothed[seed][index] || 0, probabilityFloors[index]);
+      return Math.min(cap, roundExpectedValues[index] / probability);
+    });
   }
 
   return matrix;
+}
+
+export function probabilityBasedScoring(probabilities = seedProbabilities, roundExpectedValues = Array.from({ length: rounds.length }, () => 1), cap = Infinity) {
+  return exactEqualValueScoring(probabilities, { roundExpectedValues, cap });
+}
+
+export function inferredRoundExpectedValues() {
+  return Array.from({ length: rounds.length }, () => 1);
+}
+
+export function equalValueScoring(scoring = currentScoring, probabilities = seedProbabilities, cap = Infinity) {
+  return exactEqualValueScoring(probabilities, { cap });
 }
 
 export function constrainedEqualValueScoring(
@@ -285,6 +276,17 @@ export function scoringSummary(current = currentScoring, optimized = probability
       optimizedRatio: optimizedOneSeed === 0 ? null : optimizedCinderella / optimizedOneSeed
     };
   });
+}
+
+export function equalValueDeviations(scoring = currentScoring, probabilities = seedProbabilities) {
+  const rows = seedExpectedValueTotals(scoring, probabilities);
+  const mean = rows.reduce((sum, row) => sum + row.expectedValue, 0) / rows.length;
+
+  return rows.map((row) => ({
+    seed: row.seed,
+    expectedValue: row.expectedValue,
+    deltaFromMean: row.expectedValue - mean
+  }));
 }
 
 function createSeededRandom(seed = 42) {

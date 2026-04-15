@@ -9,6 +9,7 @@ import {
   updateSeasonConfig
 } from "./api.js";
 import {
+  renderOverview,
   renderMatrix,
   renderPaths,
   renderStandings,
@@ -22,7 +23,17 @@ async function initializeApp() {
   let appData = await loadAppState();
   const uiState = createUiState(appData);
 
+  const setWorkspace = (workspace, options = {}) => {
+    uiState.activeWorkspace = workspace;
+    render();
+
+    if (options.scroll) {
+      document.querySelector("#workspace-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   const render = () => {
+    renderOverview(appData);
     renderDraftRoom(appData, uiState, actions);
     renderSeasonSetup(appData, uiState, actions);
     renderStandings(appData);
@@ -30,6 +41,8 @@ async function initializeApp() {
     renderMatrix(appData);
     renderTeams(appData);
     renderTeamTable(appData);
+    renderWorkspaceState(uiState);
+    bindShellActions(actions);
 
     const status = document.querySelector("#data-status");
     if (status) {
@@ -47,6 +60,7 @@ async function initializeApp() {
 
   const actions = {
     render,
+    setWorkspace,
     pick: async (teamName) => {
       await makeDraftPick(teamName);
       await refresh();
@@ -82,6 +96,38 @@ async function initializeApp() {
   };
 
   render();
+}
+
+function renderWorkspaceState(uiState) {
+  document.querySelectorAll("[data-workspace]").forEach((button) => {
+    const isActive = button.dataset.workspace === uiState.activeWorkspace;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  document.querySelectorAll(".workspace-panel").forEach((panel) => {
+    const workspace = panel.id.replace("workspace-panel-", "");
+    panel.hidden = workspace !== uiState.activeWorkspace;
+  });
+}
+
+function bindShellActions(actions) {
+  document.querySelectorAll("[data-workspace]").forEach((button) => {
+    button.onclick = () => {
+      actions.setWorkspace(button.dataset.workspace);
+    };
+  });
+
+  document.querySelectorAll("[data-nav-target]").forEach((button) => {
+    button.onclick = () => {
+      const surface = button.dataset.navSurface;
+      if (surface) {
+        actions.setWorkspace(surface);
+      }
+
+      document.getElementById(button.dataset.navTarget)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  });
 }
 
 initializeApp();

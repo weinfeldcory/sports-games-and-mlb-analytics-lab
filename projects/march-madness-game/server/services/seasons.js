@@ -31,6 +31,7 @@ export async function updateSeasonConfig({ season, owners: nextOwners, teams: ne
 
   state.season = Number(season);
   state.owners = ownersList;
+  state.baselineTeams = teamsList.map((team) => ({ ...team }));
   state.teams = teamsList;
   state.currentScoring = scoring;
   state.games = [];

@@ -13,7 +13,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, "..", "data");
-const STORE_PATH = path.join(DATA_DIR, "season-state.json");
+const DEFAULT_STORE_PATH = path.join(DATA_DIR, "season-state.json");
 
 export function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -92,8 +92,34 @@ export function createInitialState() {
     rounds: clone(rounds),
     currentScoring: clone(currentScoring),
     games: clone(games),
+    baselineTeams: clone(teams),
     teams: clone(teams),
     draft: createDraftState(owners)
+  };
+}
+
+export function currentStorePath() {
+  return process.env.SEASON_STATE_PATH || DEFAULT_STORE_PATH;
+}
+
+export function resetStateForDraft(state, mode = "empty") {
+  if (mode !== "empty" && mode !== "sheet") {
+    throw new Error(`Unsupported reset mode: ${mode}`);
+  }
+
+  const baselineTeams = clone(state.baselineTeams || state.teams);
+  const nextTeams = mode === "sheet"
+    ? baselineTeams
+    : baselineTeams.map((team) => ({
+      ...team,
+      owner: null
+    }));
+
+  return {
+    ...state,
+    baselineTeams,
+    teams: nextTeams,
+    draft: createDraftState(state.owners)
   };
 }
 
@@ -129,25 +155,29 @@ export function rebuildDraftPositionFromHistory(state) {
   }
 }
 
-async function ensureStoreFile() {
-  await mkdir(DATA_DIR, { recursive: true });
+async function ensureStoreFile(storePath = currentStorePath()) {
+  await mkdir(path.dirname(storePath), { recursive: true });
 
   try {
-    await readFile(STORE_PATH, "utf8");
+    await readFile(storePath, "utf8");
   } catch {
-    await writeFile(STORE_PATH, JSON.stringify(createInitialState(), null, 2));
+    await writeFile(storePath, JSON.stringify(createInitialState(), null, 2));
   }
 }
 
 export async function readState() {
-  await ensureStoreFile();
-  const raw = await readFile(STORE_PATH, "utf8");
+  const storePath = currentStorePath();
+  await ensureStoreFile(storePath);
+  const raw = await readFile(storePath, "utf8");
   const state = JSON.parse(raw);
   if (!state.draft) {
     state.draft = createDraftState(state.owners);
   }
   if (!Array.isArray(state.draft.history)) {
     state.draft.history = [];
+  }
+  if (!Array.isArray(state.baselineTeams)) {
+    state.baselineTeams = clone(state.teams);
   }
   return state;
 }
@@ -158,7 +188,8 @@ export async function writeState(nextState) {
     updatedAt: new Date().toISOString()
   };
 
-  await ensureStoreFile();
-  await writeFile(STORE_PATH, JSON.stringify(state, null, 2));
+  const storePath = currentStorePath();
+  await ensureStoreFile(storePath);
+  await writeFile(storePath, JSON.stringify(state, null, 2));
   return state;
 }

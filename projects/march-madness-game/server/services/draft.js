@@ -2,8 +2,8 @@ import {
   advanceDraft,
   clone,
   computeCurrentOwner,
-  createInitialState,
   readState,
+  resetStateForDraft,
   rebuildDraftPositionFromHistory,
   sanitizeOwners,
   writeState
@@ -70,21 +70,8 @@ export async function unassignTeam(teamName) {
 }
 
 export async function resetDraft(mode = "empty") {
-  const initialState = createInitialState();
-
-  if (mode === "sheet") {
-    return writeState(initialState);
-  }
-  if (mode !== "empty") {
-    throw new Error(`Unsupported reset mode: ${mode}`);
-  }
-
-  initialState.teams = initialState.teams.map((team) => ({
-    ...team,
-    owner: null
-  }));
-
-  return writeState(initialState);
+  const state = await readState();
+  return writeState(resetStateForDraft(state, mode));
 }
 
 export async function updateDraftSettings({ order, snake, locked }) {
