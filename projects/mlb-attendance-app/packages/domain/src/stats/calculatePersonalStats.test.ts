@@ -6,7 +6,8 @@ import type { AttendanceLog, Game, Team, UserProfile, Venue } from "../models";
 const user: UserProfile = {
   id: "user_1",
   displayName: "Cory",
-  favoriteTeamId: "team_nyy"
+  favoriteTeamId: "team_nyy",
+  followingIds: ["friend_ava"]
 };
 
 const teams: Team[] = [
@@ -29,8 +30,18 @@ const games: Game[] = [
     awayTeamId: "team_nyy",
     homeScore: 0,
     awayScore: 5,
+    homeHits: 4,
+    awayHits: 9,
     status: "final",
-    featuredPlayerHomeRun: "Aaron Judge"
+    featuredPlayerHomeRun: "Aaron Judge",
+    pitchersUsed: [
+      { teamId: "team_nyy", pitcherName: "Luis Gil", role: "starter" },
+      { teamId: "team_bos", pitcherName: "Tanner Houck", role: "starter" }
+    ],
+    battersUsed: [
+      { teamId: "team_nyy", playerName: "Juan Soto", atBats: 4, hits: 2, homeRuns: 1, rbis: 3, strikeouts: 1, walks: 1 },
+      { teamId: "team_bos", playerName: "Rafael Devers", atBats: 4, hits: 1, homeRuns: 0, rbis: 0, strikeouts: 2, walks: 0 }
+    ]
   },
   {
     id: "game_2",
@@ -41,7 +52,17 @@ const games: Game[] = [
     awayTeamId: "team_bos",
     homeScore: 6,
     awayScore: 4,
-    status: "final"
+    homeHits: 11,
+    awayHits: 8,
+    status: "final",
+    pitchersUsed: [
+      { teamId: "team_nyy", pitcherName: "Gerrit Cole", role: "starter" },
+      { teamId: "team_bos", pitcherName: "Tanner Houck", role: "reliever" }
+    ],
+    battersUsed: [
+      { teamId: "team_nyy", playerName: "Juan Soto", atBats: 5, hits: 3, homeRuns: 0, rbis: 2, strikeouts: 0, walks: 0 },
+      { teamId: "team_bos", playerName: "Rafael Devers", atBats: 4, hits: 2, homeRuns: 1, rbis: 2, strikeouts: 1, walks: 0 }
+    ]
   }
 ];
 
@@ -87,6 +108,10 @@ test("calculatePersonalStats derives totals, favorite team split, and recent mom
   assert.equal(stats.uniqueStadiumsVisited, 2);
   assert.equal(stats.uniqueSectionsSatIn, 2);
   assert.equal(stats.witnessedHomeRuns, 1);
+  assert.equal(stats.totalHitsSeen, 32);
+  assert.equal(stats.totalRunsSeen, 15);
+  assert.equal(stats.uniquePitchersSeen, 3);
+  assert.equal(stats.averageHitsPerGame, 16);
   assert.deepEqual(stats.favoriteTeamSplit, {
     teamId: "team_nyy",
     teamName: "Yankees",
@@ -94,6 +119,53 @@ test("calculatePersonalStats derives totals, favorite team split, and recent mom
     wins: 2,
     losses: 0
   });
+  assert.deepEqual(stats.topPitchersSeen[0], {
+    pitcherName: "Tanner Houck",
+    appearances: 2,
+    teams: ["Red Sox"]
+  });
+  assert.deepEqual(stats.playerBattingSummaries[0], {
+    playerName: "Juan Soto",
+    teams: ["Yankees"],
+    gamesSeen: 2,
+    atBatsSeen: 9,
+    hitsSeen: 5,
+    battingAverageSeen: 5 / 9,
+    homeRunsSeen: 1,
+    rbisSeen: 5,
+    strikeoutsSeenAtPlate: 1,
+    walksSeen: 1
+  });
+  assert.deepEqual(stats.playerPitchingSummaries[0], {
+    pitcherName: "Tanner Houck",
+    teams: ["Red Sox"],
+    appearances: 2,
+    strikeoutsSeen: 0,
+    inningsSeen: 0,
+    hitsAllowedSeen: 0,
+    runsAllowedSeen: 0,
+    eraSeen: 0
+  });
+  assert.deepEqual(stats.teamSeenSummaries, [
+    {
+      teamId: "team_bos",
+      teamName: "Red Sox",
+      gamesSeen: 2,
+      winsSeen: 0,
+      lossesSeen: 2,
+      hitsSeen: 12,
+      runsSeen: 4
+    },
+    {
+      teamId: "team_nyy",
+      teamName: "Yankees",
+      gamesSeen: 2,
+      winsSeen: 2,
+      lossesSeen: 0,
+      hitsSeen: 20,
+      runsSeen: 11
+    }
+  ]);
   assert.deepEqual(
     stats.recentMoments.map((moment) => moment.title),
     ["Road shutout", "Home opener"]

@@ -10,7 +10,10 @@ interface SectionCardProps {
 export function SectionCard({ title, children }: SectionCardProps) {
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.header}>
+        <View style={styles.eyebrowBar} />
+        <Text style={styles.title}>{title}</Text>
+      </View>
       <View style={styles.body}>{children}</View>
     </View>
   );
@@ -19,19 +22,35 @@ export function SectionCard({ title, children }: SectionCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.white,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     padding: spacing.lg,
-    gap: spacing.md,
+    gap: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.slate200
+    borderColor: colors.slate200,
+    shadowColor: colors.slate700,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 2
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  eyebrowBar: {
+    width: 12,
+    height: 12,
+    borderRadius: 999,
+    backgroundColor: colors.clay
   },
   title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.slate900
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.slate900,
+    letterSpacing: 0.2
   },
   body: {
-    gap: spacing.md
+    gap: spacing.sm
   }
 });
-

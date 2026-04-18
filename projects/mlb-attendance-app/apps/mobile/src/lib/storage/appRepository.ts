@@ -3,7 +3,8 @@ import { attendanceLogs as seededAttendanceLogs, mockUser } from "../data/mockSp
 import type { AttendanceLog, UserProfile } from "@mlb-attendance/domain";
 
 const STORAGE_KEY = "mlb-attendance-app:state";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 3;
+const SEEDED_DATA_VERSION = "real-mlb-history-v1";
 
 interface PersistedAppStateV1 {
   version: 1;
@@ -12,17 +13,34 @@ interface PersistedAppStateV1 {
   seededDataImported: boolean;
 }
 
-export interface AppRepositoryState {
+interface PersistedAppStateV2 {
+  version: 2;
   profile: UserProfile;
   attendanceLogs: AttendanceLog[];
   seededDataImported: boolean;
 }
 
-function createDefaultState(): AppRepositoryState {
+interface PersistedAppStateV3 {
+  version: 3;
+  profile: UserProfile;
+  attendanceLogs: AttendanceLog[];
+  seededDataImported: boolean;
+  seededDataVersion: string;
+}
+
+export interface AppRepositoryState {
+  profile: UserProfile;
+  attendanceLogs: AttendanceLog[];
+  seededDataImported: boolean;
+  seededDataVersion: string;
+}
+
+function createDefaultState(profileOverride?: UserProfile): AppRepositoryState {
   return {
-    profile: mockUser,
+    profile: normalizeProfile(profileOverride ?? mockUser),
     attendanceLogs: [...seededAttendanceLogs].sort((left, right) => right.attendedOn.localeCompare(left.attendedOn)),
-    seededDataImported: true
+    seededDataImported: true,
+    seededDataVersion: SEEDED_DATA_VERSION
   };
 }
 
@@ -30,7 +48,8 @@ function normalizeProfile(input: UserProfile | null | undefined): UserProfile {
   return {
     id: input?.id || mockUser.id,
     displayName: input?.displayName?.trim() || mockUser.displayName,
-    favoriteTeamId: input?.favoriteTeamId || undefined
+    favoriteTeamId: input?.favoriteTeamId || undefined,
+    followingIds: [...new Set((input?.followingIds ?? mockUser.followingIds ?? []).filter(Boolean))]
   };
 }
 
@@ -55,17 +74,19 @@ function sanitizeState(input: AppRepositoryState): AppRepositoryState {
     attendanceLogs: input.attendanceLogs
       .map((log) => normalizeAttendanceLog(log))
       .sort((left, right) => right.attendedOn.localeCompare(left.attendedOn)),
-    seededDataImported: input.seededDataImported
+    seededDataImported: input.seededDataImported,
+    seededDataVersion: input.seededDataVersion
   };
 }
 
 export function serializeAppState(state: AppRepositoryState): string {
   const sanitizedState = sanitizeState(state);
-  const payload: PersistedAppStateV1 = {
+  const payload: PersistedAppStateV3 = {
     version: STORAGE_VERSION,
     profile: sanitizedState.profile,
     attendanceLogs: sanitizedState.attendanceLogs,
-    seededDataImported: sanitizedState.seededDataImported
+    seededDataImported: sanitizedState.seededDataImported,
+    seededDataVersion: sanitizedState.seededDataVersion
   };
 
   return JSON.stringify(payload, null, 2);
@@ -81,15 +102,20 @@ function migratePersistedState(parsed: unknown): AppRepositoryState {
     return createDefaultState();
   }
 
-  const candidate = parsed as Partial<PersistedAppStateV1>;
-  if (candidate.version !== STORAGE_VERSION || !candidate.profile || !Array.isArray(candidate.attendanceLogs)) {
+  const candidate = parsed as Partial<PersistedAppStateV1 | PersistedAppStateV2 | PersistedAppStateV3>;
+  if ((candidate.version !== 1 && candidate.version !== 2 && candidate.version !== STORAGE_VERSION) || !candidate.profile || !Array.isArray(candidate.attendanceLogs)) {
     return createDefaultState();
+  }
+
+  if (candidate.version !== STORAGE_VERSION || candidate.seededDataVersion !== SEEDED_DATA_VERSION) {
+    return createDefaultState(candidate.profile);
   }
 
   return sanitizeState({
     profile: candidate.profile,
     attendanceLogs: candidate.attendanceLogs,
-    seededDataImported: candidate.seededDataImported ?? true
+    seededDataImported: candidate.seededDataImported ?? true,
+    seededDataVersion: candidate.seededDataVersion ?? SEEDED_DATA_VERSION
   });
 }
 

@@ -1,8 +1,11 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Platform } from "react-native";
 import { colors } from "../../src/styles/tokens";
 
 export default function TabLayout() {
+  const isWeb = Platform.OS === "web";
+
   return (
     <Tabs
       screenOptions={{
@@ -10,6 +13,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.navy,
         tabBarInactiveTintColor: colors.slate500,
         tabBarStyle: {
+          display: isWeb ? "none" : "flex",
           borderTopColor: colors.slate200,
           backgroundColor: colors.white
         }
@@ -63,4 +67,3 @@ export default function TabLayout() {
     </Tabs>
   );
 }
-

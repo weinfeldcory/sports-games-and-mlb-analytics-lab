@@ -26,21 +26,32 @@ export function PrimaryButton({ label, onPress, disabled = false }: PrimaryButto
 const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.navy,
-    borderRadius: radii.md,
+    borderRadius: 999,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    alignItems: "center"
+    paddingHorizontal: spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.slate200,
+    minHeight: 48,
+    shadowColor: colors.navy,
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
+    cursor: "pointer"
   },
   disabled: {
     opacity: 0.45
   },
   pressed: {
-    backgroundColor: colors.navySoft
+    backgroundColor: colors.navySoft,
+    transform: [{ translateY: 1 }]
   },
   label: {
     color: colors.white,
     fontSize: 15,
-    fontWeight: "700"
+    fontWeight: "700",
+    letterSpacing: 0.2
   }
 });
-

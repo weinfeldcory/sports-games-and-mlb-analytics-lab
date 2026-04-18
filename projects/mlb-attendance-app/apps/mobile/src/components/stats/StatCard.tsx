@@ -27,19 +27,25 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: "48%",
     backgroundColor: colors.white,
-    borderRadius: radii.md,
-    padding: spacing.lg,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
     borderWidth: 1,
     borderColor: colors.slate200,
-    gap: spacing.sm
+    gap: spacing.sm,
+    shadowColor: colors.slate700,
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 2
   },
   label: {
     fontSize: 14,
-    color: colors.slate500
+    color: colors.slate500,
+    textTransform: "uppercase",
+    letterSpacing: 1
   },
   value: {
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: "700"
   }
 });
-

@@ -4,6 +4,8 @@
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "dev": "corepack pnpm --filter mobile start",
+    "dev:web": "corepack pnpm --filter mobile exec expo start --web",
+    "build:web": "corepack pnpm --filter mobile exec expo export --platform web",
     "typecheck": "corepack pnpm -r typecheck",
     "test": "corepack pnpm --filter @mlb-attendance/domain test"
   }

@@ -8,6 +8,8 @@ interface LabeledInputProps {
   placeholder?: string;
   autoCapitalize?: "none" | "characters" | "words" | "sentences";
   error?: string;
+  multiline?: boolean;
+  numberOfLines?: number;
 }
 
 export function LabeledInput({
@@ -16,7 +18,9 @@ export function LabeledInput({
   onChangeText,
   placeholder,
   autoCapitalize = "sentences",
-  error
+  error,
+  multiline = false,
+  numberOfLines
 }: LabeledInputProps) {
   return (
     <View style={styles.wrapper}>
@@ -26,7 +30,10 @@ export function LabeledInput({
         onChangeText={onChangeText}
         placeholder={placeholder}
         autoCapitalize={autoCapitalize}
-        style={[styles.input, error ? styles.inputError : null]}
+        multiline={multiline}
+        numberOfLines={numberOfLines}
+        textAlignVertical={multiline ? "top" : "center"}
+        style={[styles.input, multiline ? styles.inputMultiline : null, error ? styles.inputError : null]}
         placeholderTextColor={colors.slate400}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -48,10 +55,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.slate200,
     borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     fontSize: 15,
-    color: colors.slate900
+    color: colors.slate900,
+    minHeight: 50
+  },
+  inputMultiline: {
+    minHeight: 160
   },
   inputError: {
     borderColor: colors.red
@@ -61,4 +72,3 @@ const styles = StyleSheet.create({
     color: colors.red
   }
 });
-

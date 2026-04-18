@@ -22,13 +22,14 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     gap: spacing.md,
-    alignItems: "flex-start"
+    alignItems: "flex-start",
+    paddingVertical: spacing.sm
   },
   dot: {
-    width: 10,
-    height: 10,
+    width: 12,
+    height: 12,
     borderRadius: 999,
-    backgroundColor: colors.amber,
+    backgroundColor: colors.clay,
     marginTop: 6
   },
   copy: {

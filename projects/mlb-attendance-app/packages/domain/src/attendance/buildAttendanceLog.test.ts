@@ -27,6 +27,8 @@ test("buildAttendanceLog trims seat fields and derives witnessed events", () => 
     awayTeamId: "team_nyy",
     homeScore: 0,
     awayScore: 5,
+    homeHits: 4,
+    awayHits: 9,
     status: "final",
     featuredPlayerHomeRun: "Aaron Judge"
   };
@@ -65,6 +67,8 @@ test("buildAttendanceLog includes extra innings and walk-off without favorite-te
     awayTeamId: "team_nyy",
     homeScore: 2,
     awayScore: 1,
+    homeHits: 7,
+    awayHits: 5,
     status: "final",
     innings: 10,
     walkOff: true

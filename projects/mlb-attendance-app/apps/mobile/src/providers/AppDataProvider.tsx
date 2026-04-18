@@ -1,23 +1,26 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { attendanceLogs as seededAttendanceLogs, games, mockUser, teams, venues } from "../lib/data/mockSportsData";
+import { attendanceLogs as seededAttendanceLogs, friendAttendanceLogs, friends, games, mockUser, teams, venues } from "../lib/data/mockSportsData";
 import { buildAttendanceLog } from "../lib/api/attendanceService";
 import { searchGames as searchCatalogGames } from "../lib/api/catalogService";
 import { clearAppState, loadAppState, parseImportedAppState, saveAppState, serializeAppState } from "../lib/storage/appRepository";
 import { calculatePersonalStats } from "@mlb-attendance/domain";
-import type { AttendanceLog, CreateAttendanceInput, Game, PersonalStats, Team, UserProfile, Venue } from "@mlb-attendance/domain";
+import type { AttendanceLog, CreateAttendanceInput, FriendProfile, Game, PersonalStats, Team, UserProfile, Venue } from "@mlb-attendance/domain";
 
 interface AppDataContextValue {
   profile: UserProfile;
+  friends: FriendProfile[];
   teams: Team[];
   venues: Venue[];
   games: Game[];
   attendanceLogs: AttendanceLog[];
+  friendAttendanceLogs: AttendanceLog[];
   stats: PersonalStats;
   isHydrated: boolean;
   persistenceStatus: "idle" | "loading" | "saving" | "saved" | "error";
   persistenceError: string | null;
   addAttendanceLog: (input: CreateAttendanceInput) => Promise<AttendanceLog>;
-  updateProfile: (updates: { displayName?: string; favoriteTeamId?: string }) => Promise<UserProfile>;
+  updateProfile: (updates: { displayName?: string; favoriteTeamId?: string; followingIds?: string[] }) => Promise<UserProfile>;
+  toggleFollowFriend: (friendId: string) => Promise<UserProfile>;
   updateAttendanceLog: (
     logId: string,
     updates: {
@@ -99,7 +102,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         await saveAppState({
           profile,
           attendanceLogs,
-          seededDataImported: true
+          seededDataImported: true,
+          seededDataVersion: "real-mlb-history-v1"
         });
         if (canceled) {
           return;
@@ -138,15 +142,28 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     return log;
   }
 
-  async function updateProfile(updates: { displayName?: string; favoriteTeamId?: string }) {
+  async function updateProfile(updates: { displayName?: string; favoriteTeamId?: string; followingIds?: string[] }) {
     const nextProfile: UserProfile = {
       ...profile,
       displayName: updates.displayName?.trim() || profile.displayName,
-      favoriteTeamId: updates.favoriteTeamId || undefined
+      favoriteTeamId: updates.favoriteTeamId || undefined,
+      followingIds: updates.followingIds ? [...new Set(updates.followingIds.filter(Boolean))] : profile.followingIds
     };
 
     setProfile(nextProfile);
     return nextProfile;
+  }
+
+  async function toggleFollowFriend(friendId: string) {
+    const currentFollowing = profile.followingIds ?? [];
+    const isFollowing = currentFollowing.includes(friendId);
+    const nextFollowing = isFollowing
+      ? currentFollowing.filter((existingId) => existingId !== friendId)
+      : [...currentFollowing, friendId];
+
+    return updateProfile({
+      followingIds: nextFollowing
+    });
   }
 
   async function updateAttendanceLog(
@@ -229,7 +246,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     return serializeAppState({
       profile,
       attendanceLogs,
-      seededDataImported: true
+      seededDataImported: true,
+      seededDataVersion: "real-mlb-history-v1"
     });
   }
 
@@ -249,16 +267,19 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const value: AppDataContextValue = {
     profile,
+    friends,
     teams,
     venues,
     games,
     attendanceLogs,
+    friendAttendanceLogs,
     stats,
     isHydrated,
     persistenceStatus,
     persistenceError,
     addAttendanceLog,
     updateProfile,
+    toggleFollowFriend,
     updateAttendanceLog,
     deleteAttendanceLog,
     retryHydration,
