@@ -2,7 +2,7 @@ import { canCompare, isCompared } from "./compare.js";
 import { hitterSlotDefinitions } from "./config.js";
 import { dom } from "./dom.js";
 import { state } from "./state.js";
-import { isSelected, selectedRecords } from "./roster.js";
+import { isSelected, selectedRecords, swapTarget } from "./roster.js";
 import { average, formatNumber, recordKey, teamLabel } from "./utils.js";
 
 const hitterSortLabels = {
@@ -335,10 +335,13 @@ export function renderHitterTable(records) {
     .map((record) => {
       const playerId = recordKey("hitter", record);
       const selected = isSelected("hitter", playerId);
+      const target = swapTarget("hitter", playerId);
       const rosterFull = selectedRecords("hitter").length >= hitterSlotDefinitions.length;
       const canAdd = !selected && !rosterFull;
+      const canSwap = !selected && !!target;
       const buttonClass = selected ? "pick-button is-selected" : canAdd ? "pick-button" : "pick-button is-disabled";
-      const buttonLabel = selected ? "Selected" : canAdd ? "Add" : "Full";
+      const swapClass = canSwap ? "pick-button swap-button" : buttonClass;
+      const buttonLabel = selected ? "Selected" : canAdd ? "Add" : canSwap ? `Swap ${target.slot.id}` : "Full";
       const compared = isCompared("hitter", playerId);
       const canToggleCompare = canCompare("hitter", playerId);
       const compareClass = compared ? "pick-button is-selected" : canToggleCompare ? "pick-button compare-button" : "pick-button is-disabled";
@@ -347,7 +350,7 @@ export function renderHitterTable(records) {
       return `
         <tr>
           <td>
-            <button type="button" class="${buttonClass}" data-action="toggle-roster" data-type="hitter" data-player-id="${playerId}">
+            <button type="button" class="${canSwap ? swapClass : buttonClass}" data-action="toggle-roster" data-type="hitter" data-player-id="${playerId}">
               ${buttonLabel}
             </button>
           </td>

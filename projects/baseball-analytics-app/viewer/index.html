@@ -28,6 +28,8 @@
         </div>
       </section>
 
+      <section class="status-strip" id="data-freshness"></section>
+
       <section class="roster-builder" id="roster-builder">
         <div class="roster-builder-header">
           <div>
@@ -59,7 +61,19 @@
             <h3>Projected Season Snapshot</h3>
             <div class="roster-summary-grid" id="roster-summary-cards"></div>
             <div class="roster-assumption" id="roster-assumption"></div>
+            <div class="roster-move-note" id="roster-move-note"></div>
             <div class="roster-team-stats" id="roster-team-stats"></div>
+            <div class="roster-insights" id="roster-insights"></div>
+            <div class="scenario-manager">
+              <div class="scenario-header">
+                <h4>Saved Scenarios</h4>
+                <div class="scenario-controls">
+                  <input id="scenario-name" type="text" placeholder="Name this roster idea" />
+                  <button id="save-scenario" class="secondary-button" type="button">Save Scenario</button>
+                </div>
+              </div>
+              <div class="scenario-list" id="scenario-list"></div>
+            </div>
           </section>
         </div>
       </section>
@@ -282,6 +296,6 @@
       </section>
     </main>
 
-    <script type="module" src="./main.js"></script>
+    <script type="module" src="./main.js?v=20260416-ui-refresh"></script>
   </body>
 </html>

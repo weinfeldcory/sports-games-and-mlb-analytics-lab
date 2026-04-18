@@ -1,6 +1,7 @@
 export const hitterDataUrl = "./data/hitter_projection_vs_current_2026.json";
 export const pitcherDataUrl = "./data/pitcher_projection_vs_current_2026.json";
 export const rosterStorageKey = "mlb-team-builder-roster-v2";
+export const rosterScenarioStorageKey = "mlb-team-builder-scenarios-v1";
 export const comparisonStorageKey = "mlb-team-builder-compare-v1";
 export const pythagoreanExponent = 1.83;
 export const teamSeasonPa = 6200;

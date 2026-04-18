@@ -2,6 +2,7 @@ import {
   hitterSlotDefinitions,
   pitcherSlotDefinitions,
   pythagoreanExponent,
+  rosterScenarioStorageKey,
   rosterStorageKey,
   teamSeasonInnings,
   teamSeasonPa,
@@ -11,6 +12,14 @@ import { state } from "./state.js";
 import { formatInteger, formatNumber, recordKey, teamLabel, weightedAverage } from "./utils.js";
 
 let onRosterChange = () => {};
+let lastRosterMove = "";
+
+function currentRosterPayload() {
+  return {
+    hitters: state.roster.hitters.map((slot) => ({ id: slot.id, playerId: slot.playerId })),
+    pitchers: state.roster.pitchers.map((slot) => ({ id: slot.id, playerId: slot.playerId })),
+  };
+}
 
 function normalizeHitterPosition(position) {
   const raw = typeof position === "string" ? position.trim().toUpperCase() : "";
@@ -76,6 +85,10 @@ function slotsForType(type) {
   return type === "pitcher" ? state.roster.pitchers : state.roster.hitters;
 }
 
+function eligibleSlotIds(type, record) {
+  return type === "pitcher" ? eligiblePitcherSlotIds(record) : eligibleHitterSlotIds(record);
+}
+
 export function findRecordById(type, playerId) {
   return datasetForType(type).find((record) => recordKey(type, record) === String(playerId));
 }
@@ -88,12 +101,66 @@ export function selectedRecords(type) {
   return slotsForType(type).map((slot) => findRecordById(type, slot.playerId)).filter(Boolean);
 }
 
+export function swapTarget(type, playerId) {
+  if (isSelected(type, playerId)) {
+    return null;
+  }
+
+  const record = findRecordById(type, playerId);
+  if (!record) {
+    return null;
+  }
+
+  const eligible = eligibleSlotIds(type, record);
+  const openSlot = slotsForType(type).find((slot) => !slot.playerId && eligible.includes(slot.id));
+  if (openSlot) {
+    return null;
+  }
+
+  const filledEligibleSlots = slotsForType(type)
+    .filter((slot) => slot.playerId && eligible.includes(slot.id))
+    .map((slot) => ({ slot, record: findRecordById(type, slot.playerId) }))
+    .filter((item) => item.record);
+
+  if (!filledEligibleSlots.length) {
+    return null;
+  }
+
+  const weakest = filledEligibleSlots.sort(
+    (left, right) =>
+      (Number(left.record.team_building_value_score) || -Infinity) - (Number(right.record.team_building_value_score) || -Infinity),
+  )[0];
+
+  return weakest || null;
+}
+
 function saveRoster() {
-  const payload = {
-    hitters: state.roster.hitters.map((slot) => ({ id: slot.id, playerId: slot.playerId })),
-    pitchers: state.roster.pitchers.map((slot) => ({ id: slot.id, playerId: slot.playerId })),
-  };
-  localStorage.setItem(rosterStorageKey, JSON.stringify(payload));
+  localStorage.setItem(rosterStorageKey, JSON.stringify(currentRosterPayload()));
+}
+
+function signedIntegerDelta(value) {
+  const rounded = Math.round(Number(value) || 0);
+  return `${rounded > 0 ? "+" : ""}${rounded}`;
+}
+
+function moveProjectionSummary(beforeProjection, afterProjection) {
+  const runsDelta = (afterProjection?.estimatedRunsScored || 0) - (beforeProjection?.estimatedRunsScored || 0);
+  const runsAllowedDelta = (afterProjection?.scaledRunsAllowed || 0) - (beforeProjection?.scaledRunsAllowed || 0);
+  const winsDelta =
+    afterProjection?.estimatedWins !== null &&
+    afterProjection?.estimatedWins !== undefined &&
+    beforeProjection?.estimatedWins !== null &&
+    beforeProjection?.estimatedWins !== undefined
+      ? afterProjection.estimatedWins - beforeProjection.estimatedWins
+      : null;
+
+  return `Runs ${signedIntegerDelta(runsDelta)}, runs allowed ${signedIntegerDelta(-runsAllowedDelta)}, wins ${
+    winsDelta === null ? "pending full roster" : signedIntegerDelta(winsDelta)
+  }.`;
+}
+
+function rememberRosterMove(label, beforeProjection, afterProjection) {
+  lastRosterMove = `${label} ${moveProjectionSummary(beforeProjection, afterProjection)}`.trim();
 }
 
 export function restoreRoster() {
@@ -116,6 +183,103 @@ export function restoreRoster() {
   }
 }
 
+function readScenarioStorage() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(rosterScenarioStorageKey) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
+function writeScenarioStorage(scenarios) {
+  localStorage.setItem(rosterScenarioStorageKey, JSON.stringify(scenarios.slice(0, 8)));
+}
+
+function scenarioLabel(name, index) {
+  const cleaned = typeof name === "string" ? name.trim() : "";
+  return cleaned || `Scenario ${index + 1}`;
+}
+
+function applyRosterPayload(payload) {
+  const hitterBySlot = new Map((payload.hitters || []).map((slot) => [slot.id, slot.playerId]));
+  const pitcherBySlot = new Map((payload.pitchers || []).map((slot) => [slot.id, slot.playerId]));
+
+  state.roster.hitters = hitterSlotDefinitions.map((slot) => {
+    const playerId = hitterBySlot.get(slot.id);
+    return { ...slot, playerId: playerId && findRecordById("hitter", playerId) ? playerId : null };
+  });
+  state.roster.pitchers = pitcherSlotDefinitions.map((slot) => {
+    const playerId = pitcherBySlot.get(slot.id);
+    return { ...slot, playerId: playerId && findRecordById("pitcher", playerId) ? playerId : null };
+  });
+}
+
+export function saveScenario(name) {
+  const scenarios = readScenarioStorage();
+  const next = [
+    {
+      id: `${Date.now()}`,
+      name: scenarioLabel(name, scenarios.length),
+      savedAt: new Date().toISOString(),
+      roster: currentRosterPayload(),
+    },
+    ...scenarios,
+  ];
+  writeScenarioStorage(next);
+  renderRosterBuilder();
+}
+
+export function loadScenario(scenarioId) {
+  const scenario = readScenarioStorage().find((item) => String(item.id) === String(scenarioId));
+  if (!scenario) {
+    return;
+  }
+
+  const beforeProjection = rosterProjection(selectedRecords("hitter"), selectedRecords("pitcher"));
+  applyRosterPayload(scenario.roster || {});
+  saveRoster();
+  rememberRosterMove(`Loaded scenario ${scenario.name}.`, beforeProjection, rosterProjection(selectedRecords("hitter"), selectedRecords("pitcher")));
+  renderRosterBuilder();
+  onRosterChange();
+}
+
+export function deleteScenario(scenarioId) {
+  writeScenarioStorage(readScenarioStorage().filter((item) => String(item.id) !== String(scenarioId)));
+  renderRosterBuilder();
+}
+
+function renderScenarioList() {
+  if (!dom.scenarioList) {
+    return;
+  }
+
+  const scenarios = readScenarioStorage();
+  if (!scenarios.length) {
+    dom.scenarioList.innerHTML = `<article class="roster-note"><span>Save a roster shell to compare future ideas against it.</span></article>`;
+    return;
+  }
+
+  dom.scenarioList.innerHTML = scenarios
+    .map((scenario) => {
+      const hitters = (scenario.roster?.hitters || []).filter((slot) => slot.playerId).length;
+      const pitchers = (scenario.roster?.pitchers || []).filter((slot) => slot.playerId).length;
+      return `
+        <article class="scenario-card">
+          <div>
+            <strong>${scenario.name}</strong>
+            <div class="card-subtext">${hitters}/${hitterSlotDefinitions.length} hitters · ${pitchers}/${pitcherSlotDefinitions.length} pitchers</div>
+          </div>
+          <div class="scenario-actions">
+            <button type="button" class="slot-remove" data-action="load-scenario" data-scenario-id="${scenario.id}">Load</button>
+            <button type="button" class="slot-remove" data-action="delete-scenario" data-scenario-id="${scenario.id}">Delete</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
 export function addToRoster(type, playerId) {
   if (isSelected(type, playerId)) {
     return;
@@ -126,14 +290,35 @@ export function addToRoster(type, playerId) {
     return;
   }
 
-  const eligible = type === "pitcher" ? eligiblePitcherSlotIds(record) : eligibleHitterSlotIds(record);
+  const beforeProjection = rosterProjection(selectedRecords("hitter"), selectedRecords("pitcher"));
+  const eligible = eligibleSlotIds(type, record);
   const openSlot = slotsForType(type).find((slot) => !slot.playerId && eligible.includes(slot.id));
   if (!openSlot) {
+    const target = swapTarget(type, playerId);
+    if (!target) {
+      return;
+    }
+
+    const replacedRecord = target.record;
+    target.slot.playerId = playerId;
+    saveRoster();
+    rememberRosterMove(
+      `Swapped ${record.player_name} in for ${replacedRecord.player_name} at ${target.slot.label}.`,
+      beforeProjection,
+      rosterProjection(selectedRecords("hitter"), selectedRecords("pitcher")),
+    );
+    renderRosterBuilder();
+    onRosterChange();
     return;
   }
 
   openSlot.playerId = playerId;
   saveRoster();
+  rememberRosterMove(
+    `Added ${record.player_name} to ${openSlot.label}.`,
+    beforeProjection,
+    rosterProjection(selectedRecords("hitter"), selectedRecords("pitcher")),
+  );
   renderRosterBuilder();
   onRosterChange();
 }
@@ -144,8 +329,15 @@ export function removeFromRoster(type, playerId) {
     return;
   }
 
+  const removedRecord = findRecordById(type, playerId);
+  const beforeProjection = rosterProjection(selectedRecords("hitter"), selectedRecords("pitcher"));
   slot.playerId = null;
   saveRoster();
+  rememberRosterMove(
+    `Removed ${removedRecord?.player_name || "player"} from ${slot.label}.`,
+    beforeProjection,
+    rosterProjection(selectedRecords("hitter"), selectedRecords("pitcher")),
+  );
   renderRosterBuilder();
   onRosterChange();
 }
@@ -156,8 +348,15 @@ export function removeFromSlot(type, slotId) {
     return;
   }
 
+  const removedRecord = findRecordById(type, slot.playerId);
+  const beforeProjection = rosterProjection(selectedRecords("hitter"), selectedRecords("pitcher"));
   slot.playerId = null;
   saveRoster();
+  rememberRosterMove(
+    `Removed ${removedRecord?.player_name || "player"} from ${slot.label}.`,
+    beforeProjection,
+    rosterProjection(selectedRecords("hitter"), selectedRecords("pitcher")),
+  );
   renderRosterBuilder();
   onRosterChange();
 }
@@ -242,6 +441,151 @@ function rosterProjection(hitterRecords, pitcherRecords) {
   };
 }
 
+function averageScore(records, key) {
+  if (!records.length) {
+    return 0;
+  }
+  return records.reduce((sum, record) => sum + (Number(record[key]) || 0), 0) / records.length;
+}
+
+function filledSlotCount(slots, ids) {
+  return slots.filter((slot) => ids.includes(slot.id) && slot.playerId).length;
+}
+
+function rosterInsights(hitterRecords, pitcherRecords) {
+  const hitterSlots = state.roster.hitters;
+  const pitcherSlots = state.roster.pitchers;
+  const catcherFilled = filledSlotCount(hitterSlots, ["C"]);
+  const middleInfieldFilled = filledSlotCount(hitterSlots, ["2B", "SS"]);
+  const outfieldFilled = filledSlotCount(hitterSlots, ["OF1", "OF2", "OF3"]);
+  const benchFilled = filledSlotCount(hitterSlots, ["BENCH1", "BENCH2"]);
+  const dhUtilFilled = filledSlotCount(hitterSlots, ["DH", "UTIL1", "UTIL2"]);
+  const rotationFilled = filledSlotCount(pitcherSlots, ["SP1", "SP2", "SP3", "SP4", "SP5"]);
+  const bullpenFilled = filledSlotCount(pitcherSlots, ["CL", "RP1", "RP2", "RP3", "RP4"]);
+  const staffDepthFilled = filledSlotCount(pitcherSlots, ["P1", "P2", "P3"]);
+
+  const strengthCandidates = [
+    { label: "Lineup talent", score: averageScore(hitterRecords, "blended_talent_score"), copy: `Avg blended talent ${formatNumber(averageScore(hitterRecords, "blended_talent_score"), 1)} across selected hitters.` },
+    { label: "Lineup stability", score: averageScore(hitterRecords, "stability_score"), copy: `Avg stability ${formatNumber(averageScore(hitterRecords, "stability_score"), 1)} keeps the offense less fragile.` },
+    { label: "Power ceiling", score: averageScore(hitterRecords, "upside_score"), copy: `Avg hitter upside ${formatNumber(averageScore(hitterRecords, "upside_score"), 1)} gives the roster more ceiling.` },
+    { label: "Run prevention", score: averageScore(pitcherRecords, "blended_run_prevention_score"), copy: `Avg run prevention ${formatNumber(averageScore(pitcherRecords, "blended_run_prevention_score"), 1)} supports the staff baseline.` },
+    { label: "Pitch quality", score: averageScore(pitcherRecords, "blended_pitch_quality_score"), copy: `Avg pitch quality ${formatNumber(averageScore(pitcherRecords, "blended_pitch_quality_score"), 1)} signals swing-and-miss quality.` },
+    { label: "Pitcher floor", score: averageScore(pitcherRecords, "floor_score"), copy: `Avg pitcher floor ${formatNumber(averageScore(pitcherRecords, "floor_score"), 1)} improves staff trust.` },
+  ]
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+
+  const risks = [];
+  if (!catcherFilled) {
+    risks.push("No catcher slot is filled, so the lineup shell is missing a required defensive anchor.");
+  }
+  if (middleInfieldFilled < 2) {
+    risks.push("Middle infield is incomplete. A missing 2B or SS weakens defensive shape and lineup balance.");
+  }
+  if (outfieldFilled < 3) {
+    risks.push(`Only ${outfieldFilled} of 3 outfield slots are filled, so the offense still lacks full corner/center coverage.`);
+  }
+  if (rotationFilled < 5) {
+    risks.push(`The rotation is only ${rotationFilled} of 5 starters deep, so projected innings are still structurally thin.`);
+  }
+  if (bullpenFilled < 5) {
+    risks.push(`Only ${bullpenFilled} of 5 bullpen slots are filled, so late-game role balance is incomplete.`);
+  }
+  if (benchFilled < 2) {
+    risks.push("The hitter bench is not fully built, which limits platoon and injury coverage.");
+  }
+  if (staffDepthFilled < 3) {
+    risks.push("The staff depth slots are still open, so fallback innings are light.");
+  }
+  if (hitterRecords.length && averageScore(hitterRecords, "platoon_risk_score") > 100) {
+    risks.push(`Avg platoon risk is ${formatNumber(averageScore(hitterRecords, "platoon_risk_score"), 1)}, which suggests the lineup may be too role-fragile.`);
+  }
+  if (pitcherRecords.length && averageScore(pitcherRecords, "stability_score") < 95) {
+    risks.push(`Avg pitcher stability is only ${formatNumber(averageScore(pitcherRecords, "stability_score"), 1)}, which makes the staff more volatile than the headline score implies.`);
+  }
+
+  const balanceCards = [
+    { label: "Hitter Spine", value: `${catcherFilled}/1 C · ${middleInfieldFilled}/2 MI · ${outfieldFilled}/3 OF`, subtext: "Core defensive structure across the lineup shell." },
+    { label: "Bench / Utility", value: `${dhUtilFilled}/3 DH+UTIL · ${benchFilled}/2 bench`, subtext: "Flexibility for lineup mixing and coverage." },
+    { label: "Rotation", value: `${rotationFilled}/5 starters`, subtext: "Front-to-back rotation coverage." },
+    { label: "Bullpen / Staff", value: `${bullpenFilled}/5 pen · ${staffDepthFilled}/3 depth`, subtext: "Late-game and fallback innings coverage." },
+  ];
+
+  return {
+    strengths: strengthCandidates,
+    risks: risks.slice(0, 4),
+    balanceCards,
+  };
+}
+
+function renderRosterInsights(hitterRecords, pitcherRecords) {
+  if (!dom.rosterInsights) {
+    return;
+  }
+
+  if (!hitterRecords.length && !pitcherRecords.length) {
+    dom.rosterInsights.innerHTML = "";
+    return;
+  }
+
+  const insights = rosterInsights(hitterRecords, pitcherRecords);
+
+  dom.rosterInsights.innerHTML = `
+    <div class="roster-insight-layout">
+      <section class="roster-insight-block">
+        <h4>Balance Check</h4>
+        <div class="roster-balance-grid">
+          ${insights.balanceCards
+            .map(
+              (card) => `
+                <article class="stat-chip">
+                  <span class="stat-chip-label">${card.label}</span>
+                  <div class="stat-chip-value">${card.value}</div>
+                  <div class="card-subtext">${card.subtext}</div>
+                </article>
+              `,
+            )
+            .join("")}
+        </div>
+      </section>
+      <section class="roster-insight-block">
+        <h4>Strengths</h4>
+        <div class="roster-note-list">
+          ${insights.strengths.length
+            ? insights.strengths
+                .map(
+                  (item) => `
+                    <article class="roster-note positive">
+                      <strong>${item.label}</strong>
+                      <span>${item.copy}</span>
+                    </article>
+                  `,
+                )
+                .join("")
+            : `<article class="roster-note"><span>Add more players to surface team strengths.</span></article>`}
+        </div>
+      </section>
+      <section class="roster-insight-block">
+        <h4>Risks</h4>
+        <div class="roster-note-list">
+          ${insights.risks.length
+            ? insights.risks
+                .map(
+                  (item) => `
+                    <article class="roster-note warning">
+                      <span>${item}</span>
+                    </article>
+                  `,
+                )
+                .join("")
+            : `<article class="roster-note positive"><span>The current roster shell does not show an obvious structural risk.</span></article>`}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
 function renderSlotCards(type, container, slots) {
   container.innerHTML = slots
     .map((slot) => {
@@ -300,7 +644,10 @@ export function renderRosterBuilder() {
     `;
     dom.rosterAssumption.textContent =
       "Formula: runs scored comes from scaled hitter wOBA; runs allowed comes from scaled pitcher projected runs allowed; wins use a 1.83 Pythagorean exponent.";
+    dom.rosterMoveNote.textContent = lastRosterMove;
     dom.rosterTeamStats.innerHTML = "";
+    dom.rosterInsights.innerHTML = "";
+    renderScenarioList();
     return;
   }
 
@@ -346,6 +693,7 @@ export function renderRosterBuilder() {
 
   dom.rosterAssumption.textContent =
     "Formula: runs scored = 6,200 PA scaled from selected hitter wOBA; runs allowed = selected pitcher projected runs allowed scaled to 1,458 innings; wins use a 1.83 Pythagorean exponent.";
+  dom.rosterMoveNote.textContent = lastRosterMove;
 
   const teamStats = [
     { label: "Projected AVG", value: formatNumber(projection.avg, 3) },
@@ -375,6 +723,9 @@ export function renderRosterBuilder() {
       `,
     )
     .join("");
+
+  renderRosterInsights(hitterRecords, pitcherRecords);
+  renderScenarioList();
 }
 
 export function registerRosterCallbacks(callbacks) {

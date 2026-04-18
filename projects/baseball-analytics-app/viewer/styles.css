@@ -112,6 +112,46 @@ h2 {
   margin-bottom: 4px;
 }
 
+.status-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.status-chip {
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(16px);
+}
+
+.status-chip-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.status-chip strong {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.status-chip-wide {
+  grid-column: span 1;
+}
+
+.status-chip-alert {
+  background: rgba(180, 83, 9, 0.08);
+  border-color: rgba(180, 83, 9, 0.18);
+}
+
 .board-section,
 .dictionary-section,
 .controls,
@@ -692,9 +732,144 @@ h2 {
   border: 1px solid rgba(180, 83, 9, 0.12);
 }
 
+.roster-move-note {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(15, 118, 110, 0.06);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .roster-team-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.roster-insights {
+  margin-top: 10px;
+}
+
+.roster-insight-layout {
+  display: grid;
+  gap: 8px;
+}
+
+.roster-insight-block {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(29, 42, 53, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.roster-insight-block h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.roster-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.roster-note-list {
+  display: grid;
+  gap: 8px;
+}
+
+.roster-note {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 32, 51, 0.08);
+  background: rgba(17, 32, 51, 0.04);
+  font-size: 12px;
+}
+
+.roster-note strong {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.roster-note span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.roster-note.positive {
+  background: rgba(15, 118, 110, 0.08);
+  border-color: rgba(15, 118, 110, 0.14);
+}
+
+.roster-note.warning {
+  background: rgba(180, 83, 9, 0.08);
+  border-color: rgba(180, 83, 9, 0.16);
+}
+
+.scenario-manager {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(17, 32, 51, 0.08);
+}
+
+.scenario-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.scenario-header h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.scenario-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 8px;
+  width: min(100%, 420px);
+}
+
+.scenario-controls input {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0 12px;
+  font: inherit;
+  background: var(--panel-strong);
+}
+
+.scenario-list {
+  display: grid;
+  gap: 8px;
+}
+
+.scenario-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 32, 51, 0.08);
+  background: rgba(17, 32, 51, 0.04);
+}
+
+.scenario-card strong {
+  display: block;
+  font-size: 13px;
+}
+
+.scenario-actions {
+  display: flex;
   gap: 8px;
 }
 
@@ -852,6 +1027,10 @@ tbody tr:hover {
   background: rgba(180, 83, 9, 0.92);
 }
 
+.swap-button {
+  background: rgba(15, 118, 110, 0.92);
+}
+
 @media (max-width: 1120px) {
   .roster-layout,
   .comparison-layout,
@@ -865,8 +1044,10 @@ tbody tr:hover {
   .hero,
   .controls,
   .summary,
+  .status-strip,
   .dictionary-grid,
   .insight-grid,
+  .roster-balance-grid,
   .team-metrics,
   .team-leaders-list,
   .roster-summary-grid,
@@ -888,5 +1069,16 @@ tbody tr:hover {
 
   .quick-nav {
     margin-top: 8px;
+  }
+
+  .scenario-header,
+  .scenario-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scenario-controls {
+    grid-template-columns: 1fr;
+    width: 100%;
   }
 }
