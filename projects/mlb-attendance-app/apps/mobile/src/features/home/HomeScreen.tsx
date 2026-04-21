@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useMemo, useState } from "react";
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { calculatePersonalStats } from "@mlb-attendance/domain";
 import { Screen } from "../../components/common/Screen";
@@ -25,11 +25,16 @@ function getNextMilestone(totalGamesAttended: number) {
 }
 
 const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const timeBuckets = [
-  { key: "afternoon", label: "Afternoon", minHour: 12, maxHour: 17 },
-  { key: "evening", label: "Evening", minHour: 17, maxHour: 20 },
-  { key: "night", label: "Night", minHour: 20, maxHour: 24 }
-] as const;
+const easternTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+  timeZone: "America/New_York"
+});
+const easternDayFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  timeZone: "America/New_York"
+});
 const levelThresholds = [
   { title: "Rookie Scorer", points: 0 },
   { title: "Bleacher Regular", points: 12 },
@@ -51,6 +56,14 @@ function getTopFriendStat(friendStats: ReturnType<typeof calculatePersonalStats>
   return `${friendStats.totalHitsSeen} hits seen`;
 }
 
+function getSortIndicator(active: boolean, direction: "asc" | "desc") {
+  if (!active) {
+    return "";
+  }
+
+  return direction === "asc" ? " ↑" : " ↓";
+}
+
 function getLevelProgress(stats: ReturnType<typeof calculatePersonalStats>) {
   const points = stats.totalGamesAttended + stats.uniqueStadiumsVisited * 4 + stats.witnessedHomeRuns * 3;
   const currentLevel = [...levelThresholds].reverse().find((level) => points >= level.points) ?? levelThresholds[0];
@@ -68,10 +81,7 @@ function getLevelProgress(stats: ReturnType<typeof calculatePersonalStats>) {
 }
 
 function buildAttendancePattern(games: Array<{ startDateTime?: string }>) {
-  const matrix = timeBuckets.map((bucket) => ({
-    ...bucket,
-    counts: dayLabels.map(() => 0)
-  }));
+  const patternMap = new Map<string, { label: string; sortValue: number; counts: number[] }>();
 
   games.forEach((game) => {
     if (!game.startDateTime) {
@@ -83,16 +93,37 @@ function buildAttendancePattern(games: Array<{ startDateTime?: string }>) {
       return;
     }
 
-    const dayIndex = (parsed.getDay() + 6) % 7;
-    const hour = parsed.getHours();
-    const bucketIndex = matrix.findIndex((bucket) => hour >= bucket.minHour && hour < bucket.maxHour);
+    const timeLabel = easternTimeFormatter.format(parsed);
+    const dayLabel = easternDayFormatter.format(parsed);
+    const dayIndex = dayLabels.indexOf(dayLabel);
+    const minutes = Number(
+      new Intl.DateTimeFormat("en-US", {
+        hour: "numeric",
+        minute: "numeric",
+        hour12: false,
+        timeZone: "America/New_York"
+      })
+        .format(parsed)
+        .replace(":", ".")
+    );
 
-    if (bucketIndex >= 0) {
-      matrix[bucketIndex].counts[dayIndex] += 1;
+    if (dayIndex >= 0) {
+      const existing = patternMap.get(timeLabel);
+      if (existing) {
+        existing.counts[dayIndex] += 1;
+      } else {
+        const counts = dayLabels.map(() => 0);
+        counts[dayIndex] = 1;
+        patternMap.set(timeLabel, {
+          label: timeLabel,
+          sortValue: minutes,
+          counts
+        });
+      }
     }
   });
 
-  return matrix;
+  return [...patternMap.values()].sort((left, right) => left.sortValue - right.sortValue);
 }
 
 function getPatternColor(count: number, maxCount: number) {
@@ -139,6 +170,8 @@ export function HomeScreen() {
   const hasLogs = attendanceLogs.length > 0;
   const nextMilestone = getNextMilestone(stats.totalGamesAttended);
   const levelProgress = getLevelProgress(stats);
+  const [teamSortKey, setTeamSortKey] = useState<"teamName" | "gamesSeen" | "winsSeen" | "lossesSeen" | "hitsSeen" | "runsSeen">("gamesSeen");
+  const [teamSortDirection, setTeamSortDirection] = useState<"asc" | "desc">("desc");
   const attendedGames = useMemo(
     () => attendanceLogs.map((log) => gamesById.get(log.gameId)).filter((game): game is NonNullable<typeof game> => Boolean(game)),
     [attendanceLogs, gamesById]
@@ -146,6 +179,31 @@ export function HomeScreen() {
   const attendancePattern = useMemo(() => buildAttendancePattern(attendedGames), [attendedGames]);
   const maxPatternCount = Math.max(0, ...attendancePattern.flatMap((bucket) => bucket.counts));
   const hasTimedGames = attendedGames.some((game) => Boolean(game.startDateTime));
+  const sortedTeamSummaries = useMemo(() => {
+    const directionFactor = teamSortDirection === "asc" ? 1 : -1;
+    return [...stats.teamSeenSummaries].sort((left, right) => {
+      if (teamSortKey === "teamName") {
+        return left.teamName.localeCompare(right.teamName) * directionFactor;
+      }
+
+      const primary = (left[teamSortKey] - right[teamSortKey]) * directionFactor;
+      if (primary !== 0) {
+        return primary;
+      }
+
+      return left.teamName.localeCompare(right.teamName);
+    });
+  }, [stats.teamSeenSummaries, teamSortDirection, teamSortKey]);
+
+  function toggleTeamSort(nextKey: typeof teamSortKey) {
+    if (teamSortKey === nextKey) {
+      setTeamSortDirection((current) => current === "desc" ? "asc" : "desc");
+      return;
+    }
+
+    setTeamSortKey(nextKey);
+    setTeamSortDirection(nextKey === "teamName" ? "asc" : "desc");
+  }
 
   const followedFriends = useMemo(() => {
     const following = new Set(profile.followingIds ?? []);
@@ -321,12 +379,12 @@ export function HomeScreen() {
                   ))}
                 </View>
                 {attendancePattern.map((bucket) => (
-                  <View key={bucket.key} style={styles.patternRow}>
+                  <View key={bucket.label} style={styles.patternRow}>
                     <Text style={[styles.patternRowLabel, styles.patternLabelCol]}>{bucket.label}</Text>
                     {bucket.counts.map((count, index) => {
                       const backgroundColor = getPatternColor(count, maxPatternCount);
                       return (
-                        <View key={`${bucket.key}_${dayLabels[index]}`} style={[styles.patternCell, { backgroundColor }]}>
+                        <View key={`${bucket.label}_${dayLabels[index]}`} style={[styles.patternCell, { backgroundColor }]}>
                           <Text style={[styles.patternCellText, backgroundColor === colors.navy ? styles.patternCellTextInverse : null]}>
                             {count || ""}
                           </Text>
@@ -335,12 +393,12 @@ export function HomeScreen() {
                     })}
                   </View>
                 ))}
-                <Text style={styles.secondaryText}>Heat map of your logged first-pitch windows by day of week.</Text>
+                <Text style={styles.secondaryText}>Heat map of exact first-pitch times by day of week, shown in Eastern Time.</Text>
               </View>
             ) : (
               <PlaceholderPanel
                 title="No first-pitch pattern yet"
-                body="This graph turns on once the saved game data includes start times, so it can sort your attendance into afternoon, evening, and night windows."
+                body="This graph turns on once the saved game data includes start times, so it can group your attendance by exact first-pitch times."
               />
             )}
           </SectionCard>
@@ -351,14 +409,26 @@ export function HomeScreen() {
             {stats.teamSeenSummaries.length ? (
               <>
                 <View style={styles.teamHeader}>
-                  <Text style={[styles.teamHeaderText, styles.teamNameCol]}>Team</Text>
-                  <Text style={styles.teamHeaderText}>G</Text>
-                  <Text style={styles.teamHeaderText}>W</Text>
-                  <Text style={styles.teamHeaderText}>L</Text>
-                  <Text style={styles.teamHeaderText}>H</Text>
-                  <Text style={styles.teamHeaderText}>R</Text>
+                  <Pressable onPress={() => toggleTeamSort("teamName")} style={[styles.teamHeaderPressable, styles.teamNameCol]}>
+                    <Text style={[styles.teamHeaderText, styles.teamNameCol]}>Team{getSortIndicator(teamSortKey === "teamName", teamSortDirection)}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => toggleTeamSort("gamesSeen")} style={styles.teamHeaderPressable}>
+                    <Text style={styles.teamHeaderText}>G{getSortIndicator(teamSortKey === "gamesSeen", teamSortDirection)}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => toggleTeamSort("winsSeen")} style={styles.teamHeaderPressable}>
+                    <Text style={styles.teamHeaderText}>W{getSortIndicator(teamSortKey === "winsSeen", teamSortDirection)}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => toggleTeamSort("lossesSeen")} style={styles.teamHeaderPressable}>
+                    <Text style={styles.teamHeaderText}>L{getSortIndicator(teamSortKey === "lossesSeen", teamSortDirection)}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => toggleTeamSort("hitsSeen")} style={styles.teamHeaderPressable}>
+                    <Text style={styles.teamHeaderText}>H{getSortIndicator(teamSortKey === "hitsSeen", teamSortDirection)}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => toggleTeamSort("runsSeen")} style={styles.teamHeaderPressable}>
+                    <Text style={styles.teamHeaderText}>R{getSortIndicator(teamSortKey === "runsSeen", teamSortDirection)}</Text>
+                  </Pressable>
                 </View>
-                {stats.teamSeenSummaries.map((team) => (
+                {sortedTeamSummaries.map((team) => (
                   <View key={team.teamId} style={styles.teamRow}>
                     <Text style={[styles.friendName, styles.teamNameCol]}>{team.teamName}</Text>
                     <Text style={styles.teamValue}>{team.gamesSeen}</Text>
@@ -510,6 +580,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.slate500,
     fontWeight: "700"
+  },
+  teamHeaderPressable: {
+    width: 32
   },
   teamRow: {
     flexDirection: "row",

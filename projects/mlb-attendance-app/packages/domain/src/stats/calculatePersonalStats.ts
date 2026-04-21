@@ -255,8 +255,8 @@ export function calculatePersonalStats(params: {
       attendanceLogs.map((log) => `${log.venueId}:${log.seat.section.trim().toLowerCase()}`)
     ).size,
     favoriteTeamSplit,
-    witnessedHomeRuns: attendanceLogs.reduce((count, log) => {
-      return count + log.witnessedEvents.filter((event) => event.type === "home_run").length;
+    witnessedHomeRuns: attendedGames.reduce((count, game) => {
+      return count + (game.battersUsed?.reduce((homeRunTotal, batter) => homeRunTotal + batter.homeRuns, 0) ?? 0);
     }, 0),
     totalHitsSeen,
     totalRunsSeen,
