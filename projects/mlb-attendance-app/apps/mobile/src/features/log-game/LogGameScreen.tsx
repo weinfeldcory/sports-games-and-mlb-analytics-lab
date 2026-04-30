@@ -200,7 +200,7 @@ export function LogGameScreen() {
                 placeholder="Fenway, Yankee Stadium..."
               />
               <View style={styles.searchMetaCard}>
-                <Text style={styles.searchMetaLabel}>Seeded catalog</Text>
+                <Text style={styles.searchMetaLabel}>MLB catalog</Text>
                 <Text style={styles.searchMetaValue}>{games.length} MLB finals ready to log</Text>
                 <Text style={styles.searchMetaCopy}>No filter also works. We will show the most recent games first.</Text>
               </View>

@@ -1,4 +1,5 @@
 import rawGameLogs from "./userGameLogs.json";
+import rawCatalogGames from "./mlbGameCatalog.json";
 import type { AttendanceLog, BatterAppearance, FriendProfile, Game, InningLineScore, PitcherAppearance, Team, UserProfile, Venue } from "@mlb-attendance/domain";
 
 interface RawGameLog {
@@ -49,28 +50,38 @@ interface RawGameLog {
   }>;
 }
 
+type RawCatalogGame = RawGameLog;
+
 const METS_TEAM_ID = "team_nym";
 
 const TEAM_METADATA: Record<number, { city: string; name: string; abbreviation: string }> = {
+  108: { city: "Los Angeles", name: "Angels", abbreviation: "LAA" },
   109: { city: "Arizona", name: "Diamondbacks", abbreviation: "ARI" },
   110: { city: "Baltimore", name: "Orioles", abbreviation: "BAL" },
   111: { city: "Boston", name: "Red Sox", abbreviation: "BOS" },
   112: { city: "Chicago", name: "Cubs", abbreviation: "CHC" },
   113: { city: "Cincinnati", name: "Reds", abbreviation: "CIN" },
   114: { city: "Cleveland", name: "Guardians", abbreviation: "CLE" },
+  115: { city: "Colorado", name: "Rockies", abbreviation: "COL" },
   116: { city: "Detroit", name: "Tigers", abbreviation: "DET" },
+  117: { city: "Houston", name: "Astros", abbreviation: "HOU" },
+  118: { city: "Kansas City", name: "Royals", abbreviation: "KC" },
   119: { city: "Los Angeles", name: "Dodgers", abbreviation: "LAD" },
   120: { city: "Washington", name: "Nationals", abbreviation: "WSH" },
   121: { city: "New York", name: "Mets", abbreviation: "NYM" },
+  133: { city: "Oakland", name: "Athletics", abbreviation: "OAK" },
   134: { city: "Pittsburgh", name: "Pirates", abbreviation: "PIT" },
+  135: { city: "San Diego", name: "Padres", abbreviation: "SD" },
   136: { city: "Seattle", name: "Mariners", abbreviation: "SEA" },
   137: { city: "San Francisco", name: "Giants", abbreviation: "SF" },
   138: { city: "St. Louis", name: "Cardinals", abbreviation: "STL" },
   139: { city: "Tampa Bay", name: "Rays", abbreviation: "TB" },
   140: { city: "Texas", name: "Rangers", abbreviation: "TEX" },
+  141: { city: "Toronto", name: "Blue Jays", abbreviation: "TOR" },
   142: { city: "Minnesota", name: "Twins", abbreviation: "MIN" },
   143: { city: "Philadelphia", name: "Phillies", abbreviation: "PHI" },
   144: { city: "Atlanta", name: "Braves", abbreviation: "ATL" },
+  145: { city: "Chicago", name: "White Sox", abbreviation: "CWS" },
   146: { city: "Miami", name: "Marlins", abbreviation: "MIA" },
   147: { city: "New York", name: "Yankees", abbreviation: "NYY" },
   158: { city: "Milwaukee", name: "Brewers", abbreviation: "MIL" }
@@ -91,6 +102,9 @@ const SPECIAL_NOTES_BY_DATE: Record<string, string> = {
 
 function toTeamId(mlbTeamId: number) {
   const team = TEAM_METADATA[mlbTeamId];
+  if (!team) {
+    return `team_${mlbTeamId}`;
+  }
   return `team_${team.abbreviation.toLowerCase()}`;
 }
 
@@ -235,6 +249,7 @@ function buildFriendAttendanceLog(params: {
 }
 
 const userGameLogs = rawGameLogs as RawGameLog[];
+const catalogGameLogs = rawCatalogGames as RawCatalogGame[];
 
 export const mockUser: UserProfile = {
   id: "user_1",
@@ -276,7 +291,7 @@ export const teams: Team[] = Object.entries(TEAM_METADATA).map(([mlbId, team]) =
 }));
 
 export const venues: Venue[] = Object.entries(
-  userGameLogs.reduce<Record<number, { id: number; name: string }>>((map, game) => {
+  [...catalogGameLogs, ...userGameLogs].reduce<Record<number, { id: number; name: string }>>((map, game) => {
     map[game.venue.id] = {
       id: game.venue.id,
       name: game.venue.name
@@ -290,31 +305,41 @@ export const venues: Venue[] = Object.entries(
   state: VENUE_METADATA[Number(venueId)]?.state
 }));
 
-export const games: Game[] = userGameLogs.map((game) => ({
-  id: `game_${game.gamePk}`,
-  sport: "MLB",
-  startDate: game.date,
-  startDateTime: game.gameDate,
-  venueId: toVenueId(game.venue.id),
-  homeTeamId: toTeamId(game.homeTeam.id),
-  awayTeamId: toTeamId(game.awayTeam.id),
-  homeScore: game.homeScore,
-  awayScore: game.awayScore,
-  homeHits: game.homeHits,
-  awayHits: game.awayHits,
-  homeErrors: game.homeErrors,
-  awayErrors: game.awayErrors,
-  status: "final",
-  innings: game.lineScore?.length,
-  lineScore: buildLineScore(game),
-  pitchersUsed: buildPitchers(game)
-  ,
-  battersUsed: buildBatters(game)
-}));
+function buildGame(game: RawCatalogGame): Game {
+  return {
+    id: `game_${game.gamePk}`,
+    sport: "MLB",
+    startDate: game.date,
+    startDateTime: game.gameDate,
+    venueId: toVenueId(game.venue.id),
+    homeTeamId: toTeamId(game.homeTeam.id),
+    awayTeamId: toTeamId(game.awayTeam.id),
+    homeScore: game.homeScore,
+    awayScore: game.awayScore,
+    homeHits: game.homeHits,
+    awayHits: game.awayHits,
+    homeErrors: game.homeErrors,
+    awayErrors: game.awayErrors,
+    status: "final",
+    innings: game.lineScore?.length,
+    lineScore: buildLineScore(game),
+    pitchersUsed: buildPitchers(game),
+    battersUsed: buildBatters(game)
+  };
+}
 
-export const attendanceLogs: AttendanceLog[] = games.map(buildAttendanceLog);
+export const seededGames: Game[] = userGameLogs.map(buildGame);
+export const catalogGames: Game[] = catalogGameLogs.map(buildGame);
 
-const gamesByDate = new Map(games.map((game) => [game.startDate, game]));
+export const games: Game[] = [
+  ...new Map(
+    [...catalogGames, ...seededGames].map((game) => [game.id, game])
+  ).values()
+];
+
+export const attendanceLogs: AttendanceLog[] = seededGames.map(buildAttendanceLog);
+
+const gamesByDate = new Map(seededGames.map((game) => [game.startDate, game]));
 
 export const friendAttendanceLogs: AttendanceLog[] = [
   buildFriendAttendanceLog({
