@@ -2,17 +2,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 import { Platform } from "react-native";
 
-function readEnv(name: keyof NodeJS.ProcessEnv) {
-  return (globalThis as { process?: { env?: NodeJS.ProcessEnv } }).process?.env?.[name];
-}
+declare const process: {
+  env: Record<string, string | undefined>;
+};
 
 export function getHostedBackendMode() {
-  return readEnv("EXPO_PUBLIC_APP_DATA_BACKEND")?.trim().toLowerCase() === "hosted";
+  return process.env.EXPO_PUBLIC_APP_DATA_BACKEND?.trim().toLowerCase() === "hosted";
 }
 
 export function getSupabaseEnv() {
-  const url = readEnv("EXPO_PUBLIC_SUPABASE_URL")?.trim();
-  const anonKey = readEnv("EXPO_PUBLIC_SUPABASE_ANON_KEY")?.trim();
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   return {
     url,
