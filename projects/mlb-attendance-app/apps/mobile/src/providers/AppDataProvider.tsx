@@ -13,6 +13,7 @@ import type { AttendanceLog, CreateAttendanceInput, FriendProfile, Game, Persona
 
 interface AppDataContextValue {
   storageMode: "local" | "hosted";
+  currentUserId: string | null;
   currentAccountLabel: string | null;
   isAuthenticated: boolean;
   profile: UserProfile;
@@ -60,7 +61,7 @@ function sortAttendanceLogs(logs: AttendanceLog[]) {
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [accounts, setAccounts] = useState<AppSessionAccount[]>([]);
-  const [currentAccountId, setCurrentAccountId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile>(mockUser);
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceLog[]>(sortAttendanceLogs(seededAttendanceLogs));
   const [isHydrated, setIsHydrated] = useState(false);
@@ -69,13 +70,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentAccount = useMemo(
-    () => accounts.find((account) => account.id === currentAccountId) ?? null,
-    [accounts, currentAccountId]
+    () => accounts.find((account) => account.id === currentUserId) ?? null,
+    [accounts, currentUserId]
   );
 
   function getCurrentSessionState() {
     return {
-      currentAccountId,
+      currentUserId,
       profile,
       attendanceLogs
     };
@@ -83,7 +84,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   function applyHydratedState(nextState: HydratedAppDataState) {
     setAccounts(nextState.accounts);
-    setCurrentAccountId(nextState.currentAccount?.id ?? null);
+    setCurrentUserId(nextState.currentUserId ?? nextState.currentAccount?.id ?? null);
     setProfile(nextState.profile);
     setAttendanceLogs(sortAttendanceLogs(nextState.attendanceLogs));
   }
@@ -136,7 +137,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
       try {
         await appDataStore.persistCurrentUser({
-          currentAccountId,
+          currentUserId,
           profile,
           attendanceLogs
         });
@@ -165,7 +166,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     return () => {
       canceled = true;
     };
-  }, [accounts, attendanceLogs, currentAccountId, isHydrated, profile]);
+  }, [accounts, attendanceLogs, currentUserId, isHydrated, profile]);
 
   async function signIn(params: { identifier: string; password: string }) {
     const nextState = await appDataStore.signIn({
@@ -197,11 +198,18 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   }
 
   async function addAttendanceLog(input: CreateAttendanceInput) {
-    if (attendanceLogs.some((existingLog) => existingLog.userId === input.userId && existingLog.gameId === input.gameId)) {
+    if (!currentUserId) {
+      throw new Error("Log in to save a game.");
+    }
+
+    if (attendanceLogs.some((existingLog) => existingLog.userId === currentUserId && existingLog.gameId === input.gameId)) {
       throw new Error("That game is already in your history.");
     }
 
-    const log = await buildAttendanceLog(input);
+    const log = await buildAttendanceLog({
+      ...input,
+      userId: currentUserId
+    });
     setAttendanceLogs((currentLogs) => [log, ...currentLogs]);
     return log;
   }
@@ -343,10 +351,17 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       const importedState = parseImportedAppState(raw);
       setProfile({
         ...importedState.profile,
-        id: profile.id,
+        id: currentUserId ?? profile.id,
         hasCompletedOnboarding: true
       });
-      setAttendanceLogs(sortAttendanceLogs(importedState.attendanceLogs.map((log) => ({ ...log, userId: profile.id }))));
+      setAttendanceLogs(
+        sortAttendanceLogs(
+          importedState.attendanceLogs.map((log) => ({
+            ...log,
+            userId: currentUserId ?? profile.id
+          }))
+        )
+      );
       setPersistenceStatus("saved");
       setPersistenceError(null);
     } catch {
@@ -358,8 +373,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const value: AppDataContextValue = {
     storageMode: appDataStore.kind,
+    currentUserId,
     currentAccountLabel: currentAccount?.label ?? null,
-    isAuthenticated: Boolean(currentAccountId),
+    isAuthenticated: Boolean(currentUserId),
     profile,
     friends,
     teams,

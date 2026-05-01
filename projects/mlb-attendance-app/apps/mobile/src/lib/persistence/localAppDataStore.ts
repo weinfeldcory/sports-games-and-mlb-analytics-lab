@@ -1,4 +1,4 @@
-import { attendanceLogs as seededAttendanceLogs, mockUser } from "../data/mockSportsData";
+import { mockUser } from "../data/mockSportsData";
 import {
   createLocalAccount,
   loadRootState,
@@ -32,16 +32,17 @@ function buildSignedOutState(accounts: LocalAccountRecord[]): HydratedAppDataSta
   return {
     accounts: summarizeAccounts(accounts),
     currentAccount: null,
+    currentUserId: null,
     profile: mockUser,
-    attendanceLogs: sortAttendanceLogs(seededAttendanceLogs)
+    attendanceLogs: []
   };
 }
 
 function buildHydratedState(
   accounts: LocalAccountRecord[],
-  currentAccountId: string | null
+  currentUserId: string | null
 ): HydratedAppDataState {
-  const currentAccount = accounts.find((account) => account.id === currentAccountId) ?? null;
+  const currentAccount = accounts.find((account) => account.id === currentUserId) ?? null;
   if (!currentAccount) {
     return buildSignedOutState(accounts);
   }
@@ -52,6 +53,7 @@ function buildHydratedState(
       id: currentAccount.id,
       label: currentAccount.username
     },
+    currentUserId: currentAccount.id,
     profile: currentAccount.profile,
     attendanceLogs: sortAttendanceLogs(currentAccount.attendanceLogs)
   };
@@ -61,12 +63,12 @@ function syncCurrentSessionIntoAccounts(
   accounts: LocalAccountRecord[],
   currentSession: CurrentSessionState
 ): LocalAccountRecord[] {
-  if (!currentSession.currentAccountId) {
+  if (!currentSession.currentUserId) {
     return accounts;
   }
 
   return accounts.map((account) =>
-    account.id === currentSession.currentAccountId
+    account.id === currentSession.currentUserId
       ? {
           ...account,
           profile: currentSession.profile,
@@ -80,7 +82,7 @@ async function persistSignedInState(params: PersistCurrentUserParams) {
   const rootState = await loadRootState();
   const accounts = syncCurrentSessionIntoAccounts(rootState.accounts, params);
   await saveRootState({
-    currentAccountId: params.currentAccountId,
+    currentUserId: params.currentUserId,
     accounts
   });
 }
@@ -96,7 +98,7 @@ async function signIn(params: SignInParams): Promise<HydratedAppDataState> {
   }
 
   await saveRootState({
-    currentAccountId: account.id,
+    currentUserId: account.id,
     accounts: syncedAccounts
   });
 
@@ -123,7 +125,7 @@ async function signUp(params: SignUpParams): Promise<HydratedAppDataState> {
   const nextAccounts = [...syncedAccounts, account];
 
   await saveRootState({
-    currentAccountId: account.id,
+    currentUserId: account.id,
     accounts: nextAccounts
   });
 
@@ -135,7 +137,7 @@ async function signOut(params: SignOutParams): Promise<HydratedAppDataState> {
   const syncedAccounts = syncCurrentSessionIntoAccounts(rootState.accounts, params.currentSession);
 
   await saveRootState({
-    currentAccountId: null,
+    currentUserId: null,
     accounts: syncedAccounts
   });
 
@@ -146,7 +148,7 @@ export const localAppDataStore: AppDataStore = {
   kind: "local",
   async hydrate() {
     const rootState = await loadRootState();
-    return buildHydratedState(rootState.accounts, rootState.currentAccountId);
+    return buildHydratedState(rootState.accounts, rootState.currentUserId);
   },
   persistCurrentUser: persistSignedInState,
   signIn,

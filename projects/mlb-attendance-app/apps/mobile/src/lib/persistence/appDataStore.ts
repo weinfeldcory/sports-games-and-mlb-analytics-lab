@@ -6,7 +6,7 @@ export interface AppSessionAccount {
 }
 
 export interface CurrentSessionState {
-  currentAccountId: string | null;
+  currentUserId: string | null;
   profile: UserProfile;
   attendanceLogs: AttendanceLog[];
 }
@@ -14,6 +14,7 @@ export interface CurrentSessionState {
 export interface HydratedAppDataState {
   accounts: AppSessionAccount[];
   currentAccount: AppSessionAccount | null;
+  currentUserId: string | null;
   profile: UserProfile;
   attendanceLogs: AttendanceLog[];
 }
