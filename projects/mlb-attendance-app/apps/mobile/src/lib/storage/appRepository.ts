@@ -3,7 +3,7 @@ import { attendanceLogs as seededAttendanceLogs, mockUser } from "../data/mockSp
 import type { AttendanceLog, UserProfile } from "@mlb-attendance/domain";
 
 const STORAGE_KEY = "mlb-attendance-app:state";
-const STORAGE_VERSION = 5;
+const STORAGE_VERSION = 6;
 const SEEDED_DATA_VERSION = "real-mlb-history-v1";
 
 interface PersistedAppStateV1 {
@@ -42,6 +42,22 @@ interface PersistedAppStateV5 {
   accounts: LocalAccountRecord[];
 }
 
+interface PersistedAccountStateV6 extends AppRepositoryState {
+  version: 6;
+}
+
+interface PersistedAccountMetadataV6 {
+  id: string;
+  username: string;
+  password: string;
+}
+
+interface PersistedRootStateV6 {
+  version: 6;
+  currentAccountId: string | null;
+  accounts: PersistedAccountMetadataV6[];
+}
+
 export interface AppRepositoryState {
   profile: UserProfile;
   attendanceLogs: AttendanceLog[];
@@ -60,6 +76,18 @@ export interface PersistedRootState {
   accounts: LocalAccountRecord[];
 }
 
+function buildProfileStorageKey(accountId: string) {
+  return `profile_${accountId}`;
+}
+
+function buildAttendanceLogsStorageKey(accountId: string) {
+  return `attendanceLogs_${accountId}`;
+}
+
+function buildAccountMetaStorageKey(accountId: string) {
+  return `accountMeta_${accountId}`;
+}
+
 function normalizeUsername(username: string) {
   return username.trim().toLowerCase().replace(/\s+/g, "-");
 }
@@ -69,15 +97,21 @@ function buildUserId(username: string) {
 }
 
 function createDefaultState(profileOverride?: UserProfile): AppRepositoryState {
+  const normalizedProfile = normalizeProfile(profileOverride ?? mockUser);
   return {
-    profile: normalizeProfile(profileOverride ?? mockUser),
-    attendanceLogs: [...seededAttendanceLogs].sort((left, right) => right.attendedOn.localeCompare(left.attendedOn)),
+    profile: normalizedProfile,
+    attendanceLogs: seededAttendanceLogs
+      .map((log) => ({
+        ...log,
+        userId: normalizedProfile.id
+      }))
+      .sort((left, right) => right.attendedOn.localeCompare(left.attendedOn)),
     seededDataImported: true,
     seededDataVersion: SEEDED_DATA_VERSION
   };
 }
 
-function normalizeProfile(input: UserProfile | null | undefined): UserProfile {
+function normalizeProfile(input: Partial<UserProfile> | null | undefined): UserProfile {
   return {
     id: input?.id || mockUser.id,
     displayName: input?.displayName?.trim() || mockUser.displayName,
@@ -115,16 +149,21 @@ function sanitizeState(input: AppRepositoryState): AppRepositoryState {
 
 function sanitizeAccount(account: LocalAccountRecord): LocalAccountRecord {
   const sanitizedState = sanitizeState(account);
+  const userId = account.id || buildUserId(account.username);
 
   return {
-    id: account.id || buildUserId(account.username),
+    id: userId,
     username: normalizeUsername(account.username),
     password: account.password ?? "",
     ...sanitizedState,
     profile: {
       ...sanitizedState.profile,
-      id: sanitizedState.profile.id || buildUserId(account.username)
-    }
+      id: sanitizedState.profile.id || userId
+    },
+    attendanceLogs: sanitizedState.attendanceLogs.map((log) => ({
+      ...log,
+      userId
+    }))
   };
 }
 
@@ -191,7 +230,7 @@ function migratePersistedRootState(parsed: unknown): PersistedRootState {
   }
 
   const candidate = parsed as Partial<PersistedAppStateV5>;
-  if (candidate.version === STORAGE_VERSION && Array.isArray(candidate.accounts)) {
+  if (candidate.version === 5 && Array.isArray(candidate.accounts)) {
     const accounts = candidate.accounts.map(sanitizeAccount);
     const currentAccountId = accounts.some((account) => account.id === candidate.currentAccountId)
       ? candidate.currentAccountId ?? null
@@ -204,6 +243,75 @@ function migratePersistedRootState(parsed: unknown): PersistedRootState {
   }
 
   return createRootStateFromLegacy(migrateLegacyAppState(parsed));
+}
+
+function parsePersistedAccountState(parsed: unknown, accountId: string): AppRepositoryState {
+  if (!parsed || typeof parsed !== "object") {
+    return createDefaultState({
+      ...mockUser,
+      id: accountId
+    });
+  }
+
+  const candidate = parsed as Partial<PersistedAccountStateV6>;
+  return sanitizeState({
+    profile: normalizeProfile({
+      ...candidate.profile,
+      id: candidate.profile?.id || accountId
+    }),
+    attendanceLogs: Array.isArray(candidate.attendanceLogs) ? candidate.attendanceLogs : [],
+    seededDataImported: candidate.seededDataImported ?? true,
+    seededDataVersion: candidate.seededDataVersion ?? SEEDED_DATA_VERSION
+  });
+}
+
+async function loadAccountState(
+  account: PersistedAccountMetadataV6
+): Promise<LocalAccountRecord> {
+  const [profileRaw, attendanceLogsRaw, metaRaw] = await AsyncStorage.multiGet([
+    buildProfileStorageKey(account.id),
+    buildAttendanceLogsStorageKey(account.id),
+    buildAccountMetaStorageKey(account.id)
+  ]);
+  const profileValue = profileRaw[1];
+  const attendanceLogsValue = attendanceLogsRaw[1];
+  const metaValue = metaRaw[1];
+  let state: AppRepositoryState;
+
+  if (!profileValue && !attendanceLogsValue && !metaValue) {
+    state = createDefaultState({
+      ...mockUser,
+      id: account.id,
+      displayName: account.username
+    });
+  } else {
+    try {
+      state = parsePersistedAccountState(
+        {
+          profile: profileValue ? JSON.parse(profileValue) : undefined,
+          attendanceLogs: attendanceLogsValue ? JSON.parse(attendanceLogsValue) : [],
+          ...(metaValue ? JSON.parse(metaValue) : {})
+        },
+        account.id
+      );
+    } catch {
+      await AsyncStorage.multiRemove([
+        buildProfileStorageKey(account.id),
+        buildAttendanceLogsStorageKey(account.id),
+        buildAccountMetaStorageKey(account.id)
+      ]);
+      state = createDefaultState({
+        ...mockUser,
+        id: account.id,
+        displayName: account.username
+      });
+    }
+  }
+
+  return sanitizeAccount({
+    ...account,
+    ...state
+  });
 }
 
 export function createLocalAccount(params: {
@@ -260,7 +368,23 @@ export async function loadRootState(): Promise<PersistedRootState> {
   }
 
   try {
-    return migratePersistedRootState(JSON.parse(raw));
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === "object") {
+      const candidate = parsed as Partial<PersistedRootStateV6>;
+      if (candidate.version === STORAGE_VERSION && Array.isArray(candidate.accounts)) {
+        const accounts = await Promise.all(candidate.accounts.map((account) => loadAccountState(account)));
+        const currentAccountId = accounts.some((account) => account.id === candidate.currentAccountId)
+          ? candidate.currentAccountId ?? null
+          : accounts[0]?.id ?? null;
+
+        return {
+          currentAccountId,
+          accounts
+        };
+      }
+    }
+
+    return migratePersistedRootState(parsed);
   } catch {
     await AsyncStorage.removeItem(STORAGE_KEY);
     return {
@@ -271,15 +395,70 @@ export async function loadRootState(): Promise<PersistedRootState> {
 }
 
 export async function saveRootState(state: PersistedRootState): Promise<void> {
-  const payload: PersistedAppStateV5 = {
+  const accounts = state.accounts.map(sanitizeAccount);
+  const payload: PersistedRootStateV6 = {
     version: STORAGE_VERSION,
     currentAccountId: state.currentAccountId,
-    accounts: state.accounts.map(sanitizeAccount)
+    accounts: accounts.map((account) => ({
+      id: account.id,
+      username: account.username,
+      password: account.password
+    }))
   };
 
+  const existingKeys = (await AsyncStorage.getAllKeys()).filter(
+    (key) =>
+      key.startsWith("profile_") ||
+      key.startsWith("attendanceLogs_") ||
+      key.startsWith("accountMeta_")
+  );
+  const nextKeys = new Set(
+    accounts.flatMap((account) => [
+      buildProfileStorageKey(account.id),
+      buildAttendanceLogsStorageKey(account.id),
+      buildAccountMetaStorageKey(account.id)
+    ])
+  );
+  const removedKeys = existingKeys.filter((key) => !nextKeys.has(key));
+
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(payload, null, 2));
+  await Promise.all(
+    accounts.map((account) =>
+      AsyncStorage.multiSet(
+        [
+          [buildProfileStorageKey(account.id), JSON.stringify(account.profile, null, 2)],
+          [buildAttendanceLogsStorageKey(account.id), JSON.stringify(account.attendanceLogs, null, 2)],
+          [
+            buildAccountMetaStorageKey(account.id),
+            JSON.stringify(
+              {
+                version: STORAGE_VERSION,
+                seededDataImported: account.seededDataImported,
+                seededDataVersion: account.seededDataVersion
+              },
+              null,
+              2
+            )
+          ]
+        ]
+      )
+    )
+  );
+  if (removedKeys.length) {
+    await AsyncStorage.multiRemove(removedKeys);
+  }
 }
 
 export async function clearAllAppState(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  const keys = await AsyncStorage.getAllKeys();
+  const removableKeys = keys.filter(
+    (key) =>
+      key === STORAGE_KEY ||
+      key.startsWith("profile_") ||
+      key.startsWith("attendanceLogs_") ||
+      key.startsWith("accountMeta_")
+  );
+  if (removableKeys.length) {
+    await AsyncStorage.multiRemove(removableKeys);
+  }
 }
