@@ -1,4 +1,4 @@
-import { attendanceLogs as seededAttendanceLogs, mockUser } from "../data/mockSportsData";
+import { mockUser } from "../data/mockSportsData";
 import type { AttendanceLog, UserProfile, WitnessedEvent } from "@mlb-attendance/domain";
 import type {
   AppDataStore,
@@ -38,8 +38,6 @@ type ProfileRow = {
 };
 
 type AttendanceLogUpsertRow = Omit<AttendanceLogRow, "id">;
-
-const RECOVERY_EMAILS = new Set(["weinfeldcory@gmail.com"]);
 
 function sortAttendanceLogs(logs: AttendanceLog[]) {
   return [...logs].sort((left, right) => right.attendedOn.localeCompare(left.attendedOn));
@@ -94,21 +92,20 @@ function mapAttendanceRowToLog(row: AttendanceLogRow): AttendanceLog {
   };
 }
 
-function mapLogToAttendanceRow(log: AttendanceLog): AttendanceLogRow {
+function mapAttendanceRowToUpsertRow(row: AttendanceLogRow): AttendanceLogUpsertRow {
   return {
-    id: log.id,
-    user_id: log.userId,
-    game_id: log.gameId,
-    venue_id: log.venueId,
-    attended_on: log.attendedOn,
-    seat_section: log.seat.section.trim(),
-    seat_row: log.seat.row?.trim() || null,
-    seat_number: log.seat.seatNumber?.trim() || null,
-    witnessed_events: log.witnessedEvents ?? [],
-    memorable_moment: log.memorableMoment?.trim() || null,
-    companion: log.companion?.trim() || null,
-    giveaway: log.giveaway?.trim() || null,
-    weather: log.weather?.trim() || null
+    user_id: row.user_id,
+    game_id: row.game_id,
+    venue_id: row.venue_id,
+    attended_on: row.attended_on,
+    seat_section: row.seat_section.trim(),
+    seat_row: row.seat_row?.trim() || null,
+    seat_number: row.seat_number?.trim() || null,
+    witnessed_events: row.witnessed_events ?? [],
+    memorable_moment: row.memorable_moment?.trim() || null,
+    companion: row.companion?.trim() || null,
+    giveaway: row.giveaway?.trim() || null,
+    weather: row.weather?.trim() || null
   };
 }
 
@@ -134,46 +131,6 @@ function buildAccount(userId: string, email: string): AppSessionAccount {
     id: userId,
     label: email
   };
-}
-
-function buildRecoveryAttendanceRows(userId: string) {
-  return seededAttendanceLogs.map((log) =>
-    mapLogToAttendanceUpsertRow({
-      ...log,
-      userId
-    })
-  );
-}
-
-async function maybeRecoverSeededLedger(userId: string, email: string, attendanceRows: AttendanceLogRow[] | null) {
-  if ((attendanceRows?.length ?? 0) > 0 || !RECOVERY_EMAILS.has(email.trim().toLowerCase())) {
-    return attendanceRows ?? [];
-  }
-
-  const client = requireSupabaseClient();
-  const recoveryRows = buildRecoveryAttendanceRows(userId);
-  const { error: recoveryError } = await client
-    .from("attendance_logs")
-    .upsert(recoveryRows, { onConflict: "user_id,game_id" });
-
-  if (recoveryError) {
-    throw new Error(recoveryError.message);
-  }
-
-  const { data: restoredRows, error: restoredRowsError } = await client
-    .from("attendance_logs")
-    .select(
-      "id, user_id, game_id, venue_id, attended_on, seat_section, seat_row, seat_number, witnessed_events, memorable_moment, companion, giveaway, weather"
-    )
-    .eq("user_id", userId)
-    .order("attended_on", { ascending: false })
-    .returns<AttendanceLogRow[]>();
-
-  if (restoredRowsError) {
-    throw new Error(restoredRowsError.message);
-  }
-
-  return restoredRows ?? [];
 }
 
 async function ensureHostedProfile(userId: string, email: string, fallbackDisplayName?: string) {
@@ -230,14 +187,12 @@ async function fetchHydratedStateForUser(userId: string, email: string, fallback
     throw new Error(attendanceError.message);
   }
 
-  const attendanceRows = await maybeRecoverSeededLedger(userId, email, rawAttendanceRows ?? []);
-
   return {
     accounts: [buildAccount(userId, email)],
     currentAccount: buildAccount(userId, email),
     currentUserId: userId,
     profile: mapProfileRowToProfile(profileRow),
-    attendanceLogs: (attendanceRows ?? []).map(mapAttendanceRowToLog)
+    attendanceLogs: (rawAttendanceRows ?? []).map(mapAttendanceRowToLog)
   } satisfies HydratedAppDataState;
 }
 

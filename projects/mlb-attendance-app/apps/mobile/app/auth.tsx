@@ -1,4 +1,5 @@
-import { Redirect } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
+import type { Href } from "expo-router";
 import { useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { LabeledInput } from "../src/components/common/LabeledInput";
@@ -8,6 +9,10 @@ import { useAppData } from "../src/providers/AppDataProvider";
 import { colors, spacing } from "../src/styles/tokens";
 
 export default function AuthScreen() {
+  const router = useRouter();
+  const termsRoute = "/legal/terms" as Href;
+  const privacyRoute = "/legal/privacy" as Href;
+  const betaDisclaimerRoute = "/legal/beta-disclaimer" as Href;
   const { width } = useWindowDimensions();
   const { storageMode, isHydrated, isAuthenticated, profile, signIn, signUp, requestPasswordReset } = useAppData();
   const isWide = width >= 1024;
@@ -157,6 +162,19 @@ export default function AuthScreen() {
                   </Text>
                 </Pressable>
               </View>
+              <View style={styles.legalRow}>
+                <Pressable onPress={() => router.push(termsRoute)}>
+                  <Text style={styles.legalLink}>Terms</Text>
+                </Pressable>
+                <Text style={styles.legalDivider}>•</Text>
+                <Pressable onPress={() => router.push(privacyRoute)}>
+                  <Text style={styles.legalLink}>Privacy</Text>
+                </Pressable>
+                <Text style={styles.legalDivider}>•</Text>
+                <Pressable onPress={() => router.push(betaDisclaimerRoute)}>
+                  <Text style={styles.legalLink}>Beta Disclaimer</Text>
+                </Pressable>
+              </View>
               {helpMessage ? <Text style={styles.helpText}>{helpMessage}</Text> : null}
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
             </SectionCard>
@@ -254,6 +272,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.navy,
     fontWeight: "700"
+  },
+  legalRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  legalLink: {
+    fontSize: 13,
+    color: colors.slate700,
+    fontWeight: "700"
+  },
+  legalDivider: {
+    fontSize: 13,
+    color: colors.slate400
   },
   errorText: {
     fontSize: 14,

@@ -27,6 +27,8 @@ interface AppDataContextValue {
   isHydrated: boolean;
   persistenceStatus: "idle" | "loading" | "saving" | "saved" | "error";
   persistenceError: string | null;
+  lastHydratedAt: string | null;
+  lastSavedAt: string | null;
   signIn: (params: { identifier: string; password: string }) => Promise<void>;
   signUp: (params: { identifier: string; password: string; displayName?: string }) => Promise<void>;
   signOut: () => Promise<void>;
@@ -61,6 +63,7 @@ function sortAttendanceLogs(logs: AttendanceLog[]) {
 }
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
+  const storageMode = appDataStore.kind;
   const [accounts, setAccounts] = useState<AppSessionAccount[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile>(mockUser);
@@ -68,6 +71,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [persistenceStatus, setPersistenceStatus] = useState<"idle" | "loading" | "saving" | "saved" | "error">("loading");
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
+  const [lastHydratedAt, setLastHydratedAt] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentAccount = useMemo(
@@ -100,6 +105,26 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     });
   }, [attendanceLogs, profile]);
 
+  function markHydratedNow() {
+    setLastHydratedAt(new Date().toISOString());
+  }
+
+  function markSavedNow() {
+    setLastSavedAt(new Date().toISOString());
+  }
+
+  function buildHydrationErrorMessage() {
+    return storageMode === "hosted"
+      ? "We could not load your hosted record right now."
+      : "We could not load your saved local record from this device.";
+  }
+
+  function buildPersistenceErrorMessage() {
+    return storageMode === "hosted"
+      ? "We could not sync your latest changes to the hosted record."
+      : "We could not save your latest changes on this device.";
+  }
+
   async function hydrateFromStorage() {
     setPersistenceStatus("loading");
     setPersistenceError(null);
@@ -107,10 +132,11 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     try {
       const hydratedState = await appDataStore.hydrate();
       applyHydratedState(hydratedState);
+      markHydratedNow();
       setPersistenceStatus("idle");
     } catch {
       setPersistenceStatus("error");
-      setPersistenceError("We could not load your saved record from device storage.");
+      setPersistenceError(buildHydrationErrorMessage());
     } finally {
       setIsHydrated(true);
     }
@@ -148,6 +174,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
         setPersistenceStatus("saved");
         setPersistenceError(null);
+        markSavedNow();
         if (saveTimeoutRef.current) {
           clearTimeout(saveTimeoutRef.current);
         }
@@ -157,7 +184,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       } catch {
         if (!canceled) {
           setPersistenceStatus("error");
-          setPersistenceError("We could not save your latest changes to device storage.");
+          setPersistenceError(buildPersistenceErrorMessage());
         }
       }
     }
@@ -175,7 +202,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       currentSession: getCurrentSessionState()
     });
     applyHydratedState(nextState);
-    setPersistenceStatus("saved");
+    markHydratedNow();
+    setPersistenceStatus("idle");
     setPersistenceError(null);
   }
 
@@ -185,6 +213,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       currentSession: getCurrentSessionState()
     });
     applyHydratedState(nextState);
+    markHydratedNow();
+    markSavedNow();
     setPersistenceStatus("saved");
     setPersistenceError(null);
   }
@@ -194,6 +224,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       currentSession: getCurrentSessionState()
     });
     applyHydratedState(nextState);
+    markHydratedNow();
+    markSavedNow();
     setPersistenceStatus("saved");
     setPersistenceError(null);
   }
@@ -367,6 +399,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           }))
         )
       );
+      markSavedNow();
       setPersistenceStatus("saved");
       setPersistenceError(null);
     } catch {
@@ -377,7 +410,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   }
 
   const value: AppDataContextValue = {
-    storageMode: appDataStore.kind,
+    storageMode,
     currentUserId,
     currentAccountLabel: currentAccount?.label ?? null,
     isAuthenticated: Boolean(currentUserId),
@@ -392,6 +425,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     isHydrated,
     persistenceStatus,
     persistenceError,
+    lastHydratedAt,
+    lastSavedAt,
     signIn,
     signUp,
     signOut,

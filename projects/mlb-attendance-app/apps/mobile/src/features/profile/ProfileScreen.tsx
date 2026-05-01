@@ -1,17 +1,26 @@
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import type { Href } from "expo-router";
 import { Screen } from "../../components/common/Screen";
 import { LabeledInput } from "../../components/common/LabeledInput";
 import { PrimaryButton } from "../../components/common/PrimaryButton";
 import { SectionCard } from "../../components/common/SectionCard";
 import { useAppData } from "../../providers/AppDataProvider";
 import { colors, spacing } from "../../styles/tokens";
+import { formatTimestamp } from "../../lib/runtimeInfo";
 
 export function ProfileScreen() {
+  const router = useRouter();
+  const debugRoute = "/debug" as Href;
+  const termsRoute = "/legal/terms" as Href;
+  const privacyRoute = "/legal/privacy" as Href;
+  const betaDisclaimerRoute = "/legal/beta-disclaimer" as Href;
   const { width } = useWindowDimensions();
   const {
     storageMode,
     currentAccountLabel,
+    currentUserId,
     profile,
     teams,
     friends,
@@ -20,6 +29,9 @@ export function ProfileScreen() {
     toggleFollowFriend,
     persistenceStatus,
     persistenceError,
+    lastHydratedAt,
+    lastSavedAt,
+    attendanceLogs,
     exportAppData,
     importAppData,
     resetAppData,
@@ -145,17 +157,51 @@ export function ProfileScreen() {
         </View>
 
         <View style={styles.sideColumn}>
-          <SectionCard title="Storage">
-            <Text style={styles.storageText}>Save status: {persistenceStatus}</Text>
+          <SectionCard title="Account And Sync">
+            <View style={styles.statusBadgeRow}>
+              <View style={[styles.modeBadge, isHosted ? styles.modeBadgeHosted : styles.modeBadgeLocal]}>
+                <Text style={[styles.modeBadgeText, isHosted ? styles.modeBadgeTextHosted : styles.modeBadgeTextLocal]}>
+                  {isHosted ? "Hosted Sync Active" : "Local Only"}
+                </Text>
+              </View>
+              <Text style={styles.storageText}>Save status: {persistenceStatus}</Text>
+            </View>
             <Text style={styles.helperText}>
               {isHosted
-                ? "Your real attendance history, follow graph, and profile now sync through the hosted backend."
-                : "Your real attendance history, follow graph, and local edits persist in browser or device storage."}
+                ? "Hosted Sync Active"
+                : "Local Only: data is saved only on this device/browser."}
             </Text>
+            <View style={styles.metaList}>
+              <Text style={styles.metaRow}>Account: {currentAccountLabel ?? "No signed-in account"}</Text>
+              <Text style={styles.metaRow}>Profile ID: {currentUserId ?? profile.id}</Text>
+              <Text style={styles.metaRow}>Logs loaded: {attendanceLogs.length}</Text>
+              <Text style={styles.metaRow}>Last hydration: {formatTimestamp(lastHydratedAt)}</Text>
+              <Text style={styles.metaRow}>Last save/sync: {formatTimestamp(lastSavedAt)}</Text>
+            </View>
             {persistenceError ? <Text style={styles.errorText}>{persistenceError}</Text> : null}
-            {persistenceStatus === "error" ? (
-              <PrimaryButton label="Retry Storage Load" onPress={retryHydration} />
-            ) : null}
+            <View style={styles.actionStack}>
+              {persistenceStatus === "error" ? (
+                <PrimaryButton label="Retry Storage Load" onPress={retryHydration} />
+              ) : null}
+              <PrimaryButton label="Open Beta Debug" onPress={() => router.push(debugRoute)} />
+            </View>
+          </SectionCard>
+
+          <SectionCard title="Policies">
+            <Text style={styles.helperText}>
+              These beta policy pages are practical placeholders and still need legal review.
+            </Text>
+            <View style={styles.linkList}>
+              <Pressable onPress={() => router.push(termsRoute)}>
+                <Text style={styles.linkText}>Terms of Service</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push(privacyRoute)}>
+                <Text style={styles.linkText}>Privacy Policy</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push(betaDisclaimerRoute)}>
+                <Text style={styles.linkText}>Beta Disclaimer</Text>
+              </Pressable>
+            </View>
           </SectionCard>
 
           <SectionCard title="Import / Export">
@@ -199,6 +245,34 @@ const styles = StyleSheet.create({
   sideColumn: {
     flex: 0.8,
     gap: spacing.lg
+  },
+  statusBadgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  modeBadge: {
+    borderRadius: 999,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6
+  },
+  modeBadgeHosted: {
+    backgroundColor: colors.green
+  },
+  modeBadgeLocal: {
+    backgroundColor: colors.slate100
+  },
+  modeBadgeText: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.3
+  },
+  modeBadgeTextHosted: {
+    color: colors.white
+  },
+  modeBadgeTextLocal: {
+    color: colors.slate700
   },
   teamList: {
     gap: spacing.sm
@@ -271,10 +345,25 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.slate900
   },
+  metaList: {
+    gap: spacing.xs
+  },
+  metaRow: {
+    fontSize: 13,
+    color: colors.slate700
+  },
   helperText: {
     fontSize: 14,
     lineHeight: 21,
     color: colors.slate500
+  },
+  linkList: {
+    gap: spacing.sm
+  },
+  linkText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.navy
   },
   actionStack: {
     gap: spacing.sm

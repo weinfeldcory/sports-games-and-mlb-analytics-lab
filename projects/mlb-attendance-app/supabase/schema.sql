@@ -30,6 +30,12 @@ create table if not exists public.attendance_logs (
   unique (user_id, game_id)
 );
 
+create index if not exists attendance_logs_user_id_idx
+on public.attendance_logs (user_id);
+
+create index if not exists attendance_logs_user_id_attended_on_idx
+on public.attendance_logs (user_id, attended_on desc);
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql

@@ -5,4 +5,12 @@ dist
 coverage
 .env
 .env.local
-
+.env.production
+.env.*.local
+*.log
+logs
+supabase/.temp
+supabase/.temp/
+apps/mobile/.expo
+apps/mobile/dist
+apps/mobile/web-build
