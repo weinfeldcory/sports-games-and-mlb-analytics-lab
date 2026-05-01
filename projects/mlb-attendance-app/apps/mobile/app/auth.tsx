@@ -1,6 +1,6 @@
 import { Redirect } from "expo-router";
 import { useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { LabeledInput } from "../src/components/common/LabeledInput";
 import { PrimaryButton } from "../src/components/common/PrimaryButton";
 import { SectionCard } from "../src/components/common/SectionCard";
@@ -20,7 +20,7 @@ export default function AuthScreen() {
   const isHosted = storageMode === "hosted";
   const identifierLabel = isHosted ? "Email" : "Username";
   const identifierPlaceholder = isHosted ? "fan@example.com" : "cory";
-  const loadingCopy = isHosted ? "Loading your hosted account..." : "Loading local accounts...";
+  const loadingCopy = "Loading account...";
 
   if (!isHydrated) {
     return (
@@ -67,88 +67,59 @@ export default function AuthScreen() {
 
         <View style={styles.shell}>
           <View style={styles.hero}>
-            <Text style={styles.eyebrow}>{isHosted ? "Hosted Accounts" : "Local Accounts"}</Text>
-            <Text style={styles.title}>
-              {isHosted
-                ? "Open your MLB attendance ledger from any device and keep it synced."
-                : "Keep separate MLB ledgers for different people on one device."}
-            </Text>
-            <Text style={styles.subtitle}>
-              {isHosted
-                ? "Use an email and password to keep your attendance history, profile, and stats available anywhere you sign in."
-                : "This is lightweight local-only access control. Each username keeps its own attendance history, profile, and stats in this browser or device storage."}
-            </Text>
+            <Text style={styles.title}>Track every MLB game you&apos;ve attended.</Text>
+            <Text style={styles.subtitle}>{mode === "signin" ? "Log in to continue." : "Create an account to get started."}</Text>
           </View>
 
-          <View style={[styles.grid, isWide ? styles.gridWide : null]}>
-            <View style={styles.mainColumn}>
-              <SectionCard title="What This Does">
-                <View style={styles.list}>
-                  <Text style={styles.listItem}>
-                    {isHosted
-                      ? "Each account keeps its own ledger so friends can use the same app from different devices."
-                      : "Each username has a separate saved ledger and can return later."}
-                  </Text>
-                  <Text style={styles.listItem}>
-                    {isHosted
-                      ? "Your profile and attendance history sync through the hosted backend instead of staying trapped on one browser."
-                      : "This is local device storage, not cloud sync or production-grade authentication."}
-                  </Text>
-                  <Text style={styles.listItem}>
-                    {isHosted
-                      ? "Import and export still work as backup rails while the product moves from local ledgers to hosted accounts."
-                      : "You can still export and import an individual person’s record after signing in."}
-                  </Text>
-                </View>
-              </SectionCard>
-            </View>
-
-            <View style={styles.sideColumn}>
-              <SectionCard title={mode === "signin" ? "Sign In" : isHosted ? "Create Account" : "Create Local Account"}>
-                <View style={styles.modeRow}>
-                  <PrimaryButton label="Sign In" onPress={() => setMode("signin")} />
-                  <PrimaryButton label="Create Account" onPress={() => setMode("signup")} />
-                </View>
-                {mode === "signup" ? (
-                  <LabeledInput
-                    label="Display name"
-                    value={displayName}
-                    onChangeText={setDisplayName}
-                    placeholder="Cory"
-                  />
-                ) : null}
+          <View style={[styles.cardWrap, isWide ? styles.cardWrapWide : null]}>
+            <SectionCard title={mode === "signin" ? "Log In" : "Create Account"}>
+              {mode === "signup" ? (
                 <LabeledInput
-                  label={identifierLabel}
-                  value={identifier}
-                  onChangeText={setIdentifier}
-                  placeholder={identifierPlaceholder}
-                  autoCapitalize="none"
-                  keyboardType={isHosted ? "email-address" : "default"}
+                  label="Display name"
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="Cory"
                 />
-                <LabeledInput
-                  label="Password"
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Password"
-                  autoCapitalize="none"
-                  secureTextEntry
-                />
-                <PrimaryButton
-                  label={
-                    isSubmitting
-                      ? "Saving..."
-                      : mode === "signin"
-                        ? "Open Ledger"
-                        : isHosted
-                          ? "Create Account And Continue"
-                          : "Create And Continue"
-                  }
-                  onPress={handleSubmit}
-                  disabled={isSubmitting}
-                />
-                {error ? <Text style={styles.errorText}>{error}</Text> : null}
-              </SectionCard>
-            </View>
+              ) : null}
+              <LabeledInput
+                label={identifierLabel}
+                value={identifier}
+                onChangeText={setIdentifier}
+                placeholder={identifierPlaceholder}
+                autoCapitalize="none"
+                keyboardType={isHosted ? "email-address" : "default"}
+              />
+              <LabeledInput
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Password"
+                autoCapitalize="none"
+                secureTextEntry
+              />
+              <PrimaryButton
+                label={
+                  isSubmitting
+                    ? "Saving..."
+                    : mode === "signin"
+                      ? "Log In"
+                      : "Create Account"
+                }
+                onPress={handleSubmit}
+                disabled={isSubmitting}
+              />
+              <View style={styles.secondaryActionRow}>
+                <Text style={styles.secondaryActionCopy}>
+                  {mode === "signin" ? "Need an account?" : "Already have an account?"}
+                </Text>
+                <Pressable onPress={() => setMode(mode === "signin" ? "signup" : "signin")}>
+                  <Text style={styles.secondaryActionLink}>
+                    {mode === "signin" ? "Create account" : "Log in"}
+                  </Text>
+                </Pressable>
+              </View>
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            </SectionCard>
           </View>
         </View>
       </ScrollView>
@@ -198,7 +169,7 @@ const styles = StyleSheet.create({
   },
   shell: {
     width: "100%",
-    maxWidth: 1180,
+    maxWidth: 760,
     alignSelf: "center",
     gap: spacing.lg
   },
@@ -208,13 +179,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xl,
     gap: spacing.sm
-  },
-  eyebrow: {
-    color: colors.amber,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    fontSize: 12,
-    fontWeight: "700"
   },
   title: {
     fontSize: 34,
@@ -229,31 +193,27 @@ const styles = StyleSheet.create({
     color: "rgba(255,253,248,0.86)",
     maxWidth: 840
   },
-  grid: {
-    gap: spacing.lg
+  cardWrap: {
+    width: "100%"
   },
-  gridWide: {
+  cardWrapWide: {
+    alignSelf: "center",
+    maxWidth: 520
+  },
+  secondaryActionRow: {
     flexDirection: "row",
-    alignItems: "flex-start"
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.xs
   },
-  mainColumn: {
-    flex: 1,
-    gap: spacing.lg
-  },
-  sideColumn: {
-    flex: 0.95,
-    gap: spacing.lg
-  },
-  list: {
-    gap: spacing.sm
-  },
-  listItem: {
+  secondaryActionCopy: {
     fontSize: 14,
-    lineHeight: 22,
-    color: colors.slate700
+    color: colors.slate500
   },
-  modeRow: {
-    gap: spacing.sm
+  secondaryActionLink: {
+    fontSize: 14,
+    color: colors.navy,
+    fontWeight: "700"
   },
   errorText: {
     fontSize: 14,
