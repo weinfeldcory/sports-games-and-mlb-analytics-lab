@@ -137,6 +137,16 @@ function createDefaultState(profileOverride?: UserProfile): AppRepositoryState {
   };
 }
 
+function createEmptyState(profileOverride?: UserProfile): AppRepositoryState {
+  const normalizedProfile = normalizeProfile(profileOverride ?? mockUser);
+  return {
+    profile: normalizedProfile,
+    attendanceLogs: [],
+    seededDataImported: false,
+    seededDataVersion: SEEDED_DATA_VERSION
+  };
+}
+
 function normalizeProfile(input: Partial<UserProfile> | null | undefined): UserProfile {
   return {
     id: input?.id || mockUser.id,
@@ -274,7 +284,7 @@ function migratePersistedRootState(parsed: unknown): PersistedRootState {
 
 function parsePersistedAccountState(parsed: unknown, accountId: string): AppRepositoryState {
   if (!parsed || typeof parsed !== "object") {
-    return createDefaultState({
+    return createEmptyState({
       ...mockUser,
       id: accountId
     });
@@ -306,7 +316,7 @@ async function loadAccountState(
   let state: AppRepositoryState;
 
   if (!profileValue && !attendanceLogsValue && !metaValue) {
-    state = createDefaultState({
+    state = createEmptyState({
       ...mockUser,
       id: account.id,
       displayName: account.username
@@ -327,7 +337,7 @@ async function loadAccountState(
         buildAttendanceLogsStorageKey(account.id),
         buildAccountMetaStorageKey(account.id)
       ]);
-      state = createDefaultState({
+      state = createEmptyState({
         ...mockUser,
         id: account.id,
         displayName: account.username
@@ -454,7 +464,7 @@ export function createLocalAccount(params: {
 }): LocalAccountRecord {
   const username = normalizeUsername(params.identifier);
   const userId = buildUserId(username);
-  const defaultState = createDefaultState({
+  const defaultState = createEmptyState({
     ...mockUser,
     id: userId,
     displayName: params.displayName?.trim() || params.identifier.trim() || mockUser.displayName,
