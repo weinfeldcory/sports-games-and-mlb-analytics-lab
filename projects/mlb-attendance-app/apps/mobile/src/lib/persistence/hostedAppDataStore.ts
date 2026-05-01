@@ -37,6 +37,8 @@ type ProfileRow = {
   has_completed_onboarding: boolean;
 };
 
+const RECOVERY_EMAILS = new Set(["weinfeldcory@gmail.com"]);
+
 function sortAttendanceLogs(logs: AttendanceLog[]) {
   return [...logs].sort((left, right) => right.attendedOn.localeCompare(left.attendedOn));
 }
@@ -114,6 +116,45 @@ function buildAccount(userId: string, email: string): AppSessionAccount {
   };
 }
 
+function buildRecoveryAttendanceRows(userId: string) {
+  return seededAttendanceLogs.map((log, index) =>
+    mapLogToAttendanceRow({
+      ...log,
+      id: `recovery_${index + 1}_${log.gameId}`,
+      userId
+    })
+  );
+}
+
+async function maybeRecoverSeededLedger(userId: string, email: string, attendanceRows: AttendanceLogRow[] | null) {
+  if ((attendanceRows?.length ?? 0) > 0 || !RECOVERY_EMAILS.has(email.trim().toLowerCase())) {
+    return attendanceRows ?? [];
+  }
+
+  const client = requireSupabaseClient();
+  const recoveryRows = buildRecoveryAttendanceRows(userId);
+  const { error: recoveryError } = await client.from("attendance_logs").upsert(recoveryRows);
+
+  if (recoveryError) {
+    throw new Error(recoveryError.message);
+  }
+
+  const { data: restoredRows, error: restoredRowsError } = await client
+    .from("attendance_logs")
+    .select(
+      "id, user_id, game_id, venue_id, attended_on, seat_section, seat_row, seat_number, witnessed_events, memorable_moment, companion, giveaway, weather"
+    )
+    .eq("user_id", userId)
+    .order("attended_on", { ascending: false })
+    .returns<AttendanceLogRow[]>();
+
+  if (restoredRowsError) {
+    throw new Error(restoredRowsError.message);
+  }
+
+  return restoredRows ?? [];
+}
+
 async function ensureHostedProfile(userId: string, email: string, fallbackDisplayName?: string) {
   const client = requireSupabaseClient();
   const { data: existingProfile, error: fetchError } = await client
@@ -155,7 +196,7 @@ async function ensureHostedProfile(userId: string, email: string, fallbackDispla
 async function fetchHydratedStateForUser(userId: string, email: string, fallbackDisplayName?: string) {
   const client = requireSupabaseClient();
   const profileRow = await ensureHostedProfile(userId, email, fallbackDisplayName);
-  const { data: attendanceRows, error: attendanceError } = await client
+  const { data: rawAttendanceRows, error: attendanceError } = await client
     .from("attendance_logs")
     .select(
       "id, user_id, game_id, venue_id, attended_on, seat_section, seat_row, seat_number, witnessed_events, memorable_moment, companion, giveaway, weather"
@@ -167,6 +208,8 @@ async function fetchHydratedStateForUser(userId: string, email: string, fallback
   if (attendanceError) {
     throw new Error(attendanceError.message);
   }
+
+  const attendanceRows = await maybeRecoverSeededLedger(userId, email, rawAttendanceRows ?? []);
 
   return {
     accounts: [buildAccount(userId, email)],
