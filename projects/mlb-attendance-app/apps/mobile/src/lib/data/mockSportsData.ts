@@ -180,6 +180,25 @@ function buildLineScore(game: RawGameLog): InningLineScore[] | undefined {
   }));
 }
 
+function buildWalkOff(lineScore: InningLineScore[] | undefined, homeScore: number, awayScore: number) {
+  if (!lineScore?.length || homeScore <= awayScore) {
+    return false;
+  }
+
+  const finalInning = lineScore[lineScore.length - 1];
+  if (!finalInning || finalInning.homeRuns <= 0) {
+    return false;
+  }
+
+  const homeBeforeFinal = lineScore
+    .slice(0, -1)
+    .reduce((total, inning) => total + inning.homeRuns, 0);
+  const awayThroughFinal = lineScore
+    .reduce((total, inning) => total + inning.awayRuns, 0);
+
+  return homeBeforeFinal < awayThroughFinal;
+}
+
 function buildWitnessedEvents(game: Game): AttendanceLog["witnessedEvents"] {
   const events: AttendanceLog["witnessedEvents"] = [];
   const metsWereHome = game.homeTeamId === METS_TEAM_ID;
@@ -306,6 +325,8 @@ export const venues: Venue[] = Object.entries(
 }));
 
 function buildGame(game: RawCatalogGame): Game {
+  const lineScore = buildLineScore(game);
+
   return {
     id: `game_${game.gamePk}`,
     sport: "MLB",
@@ -322,7 +343,8 @@ function buildGame(game: RawCatalogGame): Game {
     awayErrors: game.awayErrors,
     status: "final",
     innings: game.lineScore?.length,
-    lineScore: buildLineScore(game),
+    lineScore,
+    walkOff: buildWalkOff(lineScore, game.homeScore, game.awayScore),
     pitchersUsed: buildPitchers(game),
     battersUsed: buildBatters(game)
   };
