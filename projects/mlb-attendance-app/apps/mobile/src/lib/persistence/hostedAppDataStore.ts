@@ -1,4 +1,4 @@
-import { attendanceLogs as seededAttendanceLogs, mockUser } from "../data/mockSportsData";
+import { mockUser } from "../data/mockSportsData";
 import type { AttendanceLog, UserProfile, WitnessedEvent } from "@mlb-attendance/domain";
 import type {
   AppDataStore,
@@ -47,7 +47,7 @@ function createSignedOutState(): HydratedAppDataState {
     currentAccount: null,
     currentUserId: null,
     profile: mockUser,
-    attendanceLogs: sortAttendanceLogs(seededAttendanceLogs)
+    attendanceLogs: []
   };
 }
 

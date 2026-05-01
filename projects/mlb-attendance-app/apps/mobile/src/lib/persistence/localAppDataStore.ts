@@ -1,4 +1,4 @@
-import { attendanceLogs as seededAttendanceLogs, mockUser } from "../data/mockSportsData";
+import { mockUser } from "../data/mockSportsData";
 import {
   createLocalAccount,
   loadRootState,
@@ -34,7 +34,7 @@ function buildSignedOutState(accounts: LocalAccountRecord[]): HydratedAppDataSta
     currentAccount: null,
     currentUserId: null,
     profile: mockUser,
-    attendanceLogs: sortAttendanceLogs(seededAttendanceLogs)
+    attendanceLogs: []
   };
 }
 
