@@ -206,16 +206,25 @@ function buildLevelProgress(params: {
   const uniqueTeamsSeen = stats.teamSeenSummaries.length;
   const streaks = getAttendanceWeekStreak(attendanceLogs);
   const streakBonus = getStreakBonus(streaks.bestWeeks);
-  const breakdown = {
-    games: stats.totalGamesAttended * SCORE_RULES.game,
-    stadiums: stats.uniqueStadiumsVisited * SCORE_RULES.stadium,
-    homeRuns: stats.witnessedHomeRuns * SCORE_RULES.homeRun,
-    extraInnings: extraInningsGames * SCORE_RULES.extraInnings,
-    walkOffs: walkOffGames * SCORE_RULES.walkOff,
-    uniqueTeams: uniqueTeamsSeen * SCORE_RULES.uniqueTeam,
+  const counts = {
+    games: stats.totalGamesAttended,
+    stadiums: stats.uniqueStadiumsVisited,
+    homeRuns: stats.witnessedHomeRuns,
+    extraInnings: extraInningsGames,
+    walkOffs: walkOffGames,
+    uniqueTeams: uniqueTeamsSeen,
+    bestStreakWeeks: streaks.bestWeeks
+  };
+  const pointBreakdown = {
+    games: counts.games * SCORE_RULES.game,
+    stadiums: counts.stadiums * SCORE_RULES.stadium,
+    homeRuns: counts.homeRuns * SCORE_RULES.homeRun,
+    extraInnings: counts.extraInnings * SCORE_RULES.extraInnings,
+    walkOffs: counts.walkOffs * SCORE_RULES.walkOff,
+    uniqueTeams: counts.uniqueTeams * SCORE_RULES.uniqueTeam,
     streakBonus
   };
-  const points = Object.values(breakdown).reduce((total, value) => total + value, 0);
+  const points = Object.values(pointBreakdown).reduce((total, value) => total + value, 0);
   const currentLevel = [...levelThresholds].reverse().find((level) => points >= level.points) ?? levelThresholds[0];
   const nextLevel = levelThresholds.find((level) => level.points > points) ?? null;
   const floor = currentLevel.points;
@@ -227,7 +236,8 @@ function buildLevelProgress(params: {
     currentLevel,
     nextLevel,
     progress,
-    breakdown,
+    counts,
+    pointBreakdown,
     streaks
   };
 }
@@ -494,38 +504,38 @@ export function HomeScreen() {
                   </Text>
                   <Text style={styles.heroSubText}>
                     Best streak: {levelProgress.streaks.bestWeeks} weeks
-                    {levelProgress.breakdown.streakBonus
-                      ? ` • ${levelProgress.breakdown.streakBonus} streak bonus points`
+                    {levelProgress.pointBreakdown.streakBonus
+                      ? ` • ${levelProgress.pointBreakdown.streakBonus} bonus points`
                       : " • no streak bonus yet"}
                   </Text>
                   <View style={styles.levelBreakdown}>
                     <View style={styles.levelPill}>
                       <Text style={styles.levelPillLabel}>Games</Text>
-                      <Text style={styles.levelPillValue}>{levelProgress.breakdown.games}</Text>
+                      <Text style={styles.levelPillValue}>{levelProgress.counts.games}</Text>
                     </View>
                     <View style={styles.levelPill}>
                       <Text style={styles.levelPillLabel}>Stadiums</Text>
-                      <Text style={styles.levelPillValue}>{levelProgress.breakdown.stadiums}</Text>
+                      <Text style={styles.levelPillValue}>{levelProgress.counts.stadiums}</Text>
                     </View>
                     <View style={styles.levelPill}>
                       <Text style={styles.levelPillLabel}>HR Seen</Text>
-                      <Text style={styles.levelPillValue}>{levelProgress.breakdown.homeRuns}</Text>
+                      <Text style={styles.levelPillValue}>{levelProgress.counts.homeRuns}</Text>
                     </View>
                     <View style={styles.levelPill}>
                       <Text style={styles.levelPillLabel}>Walk-Offs</Text>
-                      <Text style={styles.levelPillValue}>{levelProgress.breakdown.walkOffs}</Text>
+                      <Text style={styles.levelPillValue}>{levelProgress.counts.walkOffs}</Text>
                     </View>
                     <View style={styles.levelPill}>
                       <Text style={styles.levelPillLabel}>Extra Inn.</Text>
-                      <Text style={styles.levelPillValue}>{levelProgress.breakdown.extraInnings}</Text>
+                      <Text style={styles.levelPillValue}>{levelProgress.counts.extraInnings}</Text>
                     </View>
                     <View style={styles.levelPill}>
                       <Text style={styles.levelPillLabel}>Unique Teams</Text>
-                      <Text style={styles.levelPillValue}>{levelProgress.breakdown.uniqueTeams}</Text>
+                      <Text style={styles.levelPillValue}>{levelProgress.counts.uniqueTeams}</Text>
                     </View>
                     <View style={styles.levelPill}>
-                      <Text style={styles.levelPillLabel}>Streak Bonus</Text>
-                      <Text style={styles.levelPillValue}>{levelProgress.breakdown.streakBonus}</Text>
+                      <Text style={styles.levelPillLabel}>Best Streak</Text>
+                      <Text style={styles.levelPillValue}>{levelProgress.counts.bestStreakWeeks}</Text>
                     </View>
                   </View>
                 </View>
@@ -541,7 +551,7 @@ export function HomeScreen() {
                     {stats.uniqueStadiumsVisited} stadiums visited and {stats.uniqueSectionsSatIn} seating sections tracked.
                   </Text>
                   <Text style={styles.heroSubText}>
-                    Score rules: {SCORE_RULES.game}/game, {SCORE_RULES.stadium}/stadium, {SCORE_RULES.uniqueTeam}/unique team, {SCORE_RULES.homeRun}/HR, {SCORE_RULES.extraInnings}/extra-innings, {SCORE_RULES.walkOff}/walk-off.
+                    Score: {SCORE_RULES.game}/game, {SCORE_RULES.stadium}/stadium, {SCORE_RULES.uniqueTeam}/team, {SCORE_RULES.homeRun}/HR, {SCORE_RULES.extraInnings}/extra-inning game, {SCORE_RULES.walkOff}/walk-off.
                   </Text>
                   <Text style={styles.heroSubText}>
                     {favoriteTeam
