@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import type { Href } from "expo-router";
 import { useAppData } from "../../providers/AppDataProvider";
@@ -141,30 +141,40 @@ export function AppShell({ title, subtitle, children, scrollable = true }: AppSh
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View
-        style={[
-          styles.content,
-          {
-            paddingHorizontal: responsive.isCompact ? spacing.sm : spacing.md,
-            paddingTop: spacing.md,
-            paddingBottom: spacing.md
-          }
-        ]}
+      <KeyboardAvoidingView
+        style={styles.keyboardShell}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
       >
-        <View style={styles.backgroundGlowTop} />
-        <View style={styles.backgroundGlowBottom} />
+        <View
+          style={[
+            styles.content,
+            {
+              paddingHorizontal: responsive.isCompact ? spacing.sm : spacing.md,
+              paddingTop: spacing.md,
+              paddingBottom: spacing.md
+            }
+          ]}
+        >
+          <View style={styles.backgroundGlowTop} />
+          <View style={styles.backgroundGlowBottom} />
 
-        <View style={styles.shell}>
-          {header}
-          {scrollable ? (
-            <ScrollView contentContainerStyle={styles.scrollContent} style={styles.scrollArea}>
-              {body}
-            </ScrollView>
-          ) : (
-            <View style={styles.staticBody}>{body}</View>
-          )}
+          <View style={styles.shell}>
+            {header}
+            {scrollable ? (
+              <ScrollView
+                contentContainerStyle={[styles.scrollContent, responsive.isCompact ? styles.scrollContentCompact : null]}
+                style={styles.scrollArea}
+                keyboardShouldPersistTaps="handled"
+              >
+                {body}
+              </ScrollView>
+            ) : (
+              <View style={styles.staticBody}>{body}</View>
+            )}
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -173,6 +183,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.canvas
+  },
+  keyboardShell: {
+    flex: 1
   },
   content: {
     flex: 1,
@@ -210,6 +223,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: spacing.xxl
+  },
+  scrollContentCompact: {
+    paddingBottom: spacing.xxxl
   },
   staticBody: {
     flex: 1

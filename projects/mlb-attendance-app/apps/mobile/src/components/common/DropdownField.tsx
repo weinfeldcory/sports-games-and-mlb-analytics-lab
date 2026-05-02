@@ -52,7 +52,8 @@ export function DropdownField<T extends string | number>(props: DropdownFieldPro
 
 const styles = StyleSheet.create({
   wrapper: {
-    gap: spacing.xs
+    gap: spacing.xs,
+    maxWidth: "100%"
   },
   label: {
     fontSize: 11,

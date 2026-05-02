@@ -1,7 +1,7 @@
 import { Redirect, useRouter } from "expo-router";
 import type { Href } from "expo-router";
 import { useState } from "react";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { PrimaryButton } from "../src/components/common/PrimaryButton";
 import { LabeledInput } from "../src/components/common/LabeledInput";
 import { SectionCard } from "../src/components/common/SectionCard";
@@ -68,27 +68,32 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.backgroundOrbOne} />
-        <View style={styles.backgroundOrbTwo} />
+      <KeyboardAvoidingView
+        style={styles.keyboardShell}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
+      >
+        <ScrollView contentContainerStyle={[styles.scroll, width < 640 ? styles.scrollCompact : null]} keyboardShouldPersistTaps="handled">
+          <View style={styles.backgroundOrbOne} />
+          <View style={styles.backgroundOrbTwo} />
 
-        <View style={styles.shell}>
-          <View style={styles.hero}>
-            <Text style={styles.eyebrow}>First Run Setup</Text>
-            <Text style={styles.title}>Build your personal MLB attendance ledger.</Text>
-            <Text style={styles.subtitle}>
-              A fast setup now gives your first game a home, unlocks personal stats, and keeps the next step obvious.
-            </Text>
-            <View style={styles.progressRow}>
-              {Array.from({ length: totalSteps }).map((_, index) => (
-                <View key={index} style={[styles.progressDot, index <= step ? styles.progressDotActive : null]} />
-              ))}
+          <View style={styles.shell}>
+            <View style={[styles.hero, width < 640 ? styles.heroCompact : null]}>
+              <Text style={styles.eyebrow}>First Run Setup</Text>
+              <Text style={styles.title}>Build your personal MLB attendance ledger.</Text>
+              <Text style={styles.subtitle}>
+                A fast setup now gives your first game a home, unlocks personal stats, and keeps the next step obvious.
+              </Text>
+              <View style={styles.progressRow}>
+                {Array.from({ length: totalSteps }).map((_, index) => (
+                  <View key={index} style={[styles.progressDot, index <= step ? styles.progressDotActive : null]} />
+                ))}
+              </View>
             </View>
-          </View>
 
-          <View style={[styles.grid, isWide ? styles.gridWide : null]}>
-            <View style={styles.mainColumn}>
-              <SectionCard title={`Step ${step + 1} of ${totalSteps}`}>
+            <View style={[styles.grid, isWide ? styles.gridWide : null]}>
+              <View style={styles.mainColumn}>
+                <SectionCard title={`Step ${step + 1} of ${totalSteps}`}>
                 {step === 0 ? (
                   <View style={styles.stepStack}>
                     <Text style={styles.stepTitle}>Build your personal MLB attendance ledger.</Text>
@@ -165,29 +170,30 @@ export default function OnboardingScreen() {
                     )}
                   </View>
                 </View>
-              </SectionCard>
-            </View>
+                </SectionCard>
+              </View>
 
-            <View style={styles.sideColumn}>
-              <SectionCard title="What You Unlock">
-                <View style={styles.list}>
-                  <Text style={styles.listItem}>A personal ledger of every MLB game you’ve attended.</Text>
-                  <Text style={styles.listItem}>Favorite-team record, stadium count, and progress milestones.</Text>
-                  <Text style={styles.listItem}>Witnessed hitter and pitcher insights when game player data is available.</Text>
-                </View>
-              </SectionCard>
+              <View style={styles.sideColumn}>
+                <SectionCard title="What You Unlock">
+                  <View style={styles.list}>
+                    <Text style={styles.listItem}>A personal ledger of every MLB game you’ve attended.</Text>
+                    <Text style={styles.listItem}>Favorite-team record, stadium count, and progress milestones.</Text>
+                    <Text style={styles.listItem}>Witnessed hitter and pitcher insights when game player data is available.</Text>
+                  </View>
+                </SectionCard>
 
-              <SectionCard title="Flexible Later">
-                <View style={styles.list}>
-                  <Text style={styles.listItem}>You can change your display name and favorite team later.</Text>
-                  <Text style={styles.listItem}>Memory fields like companion, giveaway, and weather can wait until after the save.</Text>
-                  <Text style={styles.listItem}>This is an independent fan product, not an official MLB or team app.</Text>
-                </View>
-              </SectionCard>
+                <SectionCard title="Flexible Later">
+                  <View style={styles.list}>
+                    <Text style={styles.listItem}>You can change your display name and favorite team later.</Text>
+                    <Text style={styles.listItem}>Memory fields like companion, giveaway, and weather can wait until after the save.</Text>
+                    <Text style={styles.listItem}>This is an independent fan product, not an official MLB or team app.</Text>
+                  </View>
+                </SectionCard>
+              </View>
             </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -197,10 +203,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.canvas
   },
+  keyboardShell: {
+    flex: 1
+  },
   scroll: {
     minHeight: "100%",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg
+  },
+  scrollCompact: {
+    paddingHorizontal: spacing.sm
   },
   loadingShell: {
     flex: 1,
@@ -244,6 +256,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xl,
     gap: spacing.sm
+  },
+  heroCompact: {
+    borderRadius: 22,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg
   },
   eyebrow: {
     color: colors.amber,

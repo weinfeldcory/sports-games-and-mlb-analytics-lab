@@ -845,6 +845,8 @@ export function HomeScreen() {
       : persistenceStatus === "saving"
         ? "warning"
         : "success";
+  const heroPrompt = ledgerPrompts[0];
+  const heroInsight = insightCards[0];
 
   return (
     <Screen title="Home" subtitle={`Your MLB ledger inside ${APP_NAME}: latest memories, unlocked progress, and the next best move.`}>
@@ -875,69 +877,23 @@ export function HomeScreen() {
 
               <View style={styles.heroRail}>
                 <View style={styles.heroRailCard}>
-                  <Text style={styles.heroRailLabel}>Level journey</Text>
-                  <Text style={styles.heroRailValue}>{hasLogs ? levelProgress.currentLevel.title : "Rookie Scorer"}</Text>
+                  <Text style={styles.heroRailLabel}>Continue building</Text>
+                  <Text style={styles.heroRailValue}>{heroPrompt?.title ?? nextAction.label}</Text>
                   <Text style={styles.heroRailMeta}>
-                    {levelProgress.nextLevel
-                      ? `${levelProgress.nextLevel.points - levelProgress.points} to ${levelProgress.nextLevel.title}`
-                      : "Top level reached"}
+                    {heroPrompt?.body ?? nextAction.summary}
                   </Text>
-                  <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { width: `${levelJourney.topProgress * 100}%` }]} />
-                  </View>
-                  <View style={styles.levelMilestoneRow}>
-                    {levelJourney.levels.map((level) => (
-                      <View key={level.title} style={styles.levelMilestone}>
-                        <View
-                          style={[
-                            styles.levelMilestoneDot,
-                            level.status === "completed" ? styles.levelMilestoneDotCompleted : null,
-                            level.status === "current" ? styles.levelMilestoneDotCurrent : null
-                          ]}
-                        />
-                      </View>
-                    ))}
-                  </View>
-                  <View style={styles.levelJourneySummary}>
-                    <Text style={styles.levelJourneySummaryText}>
-                      {levelJourney.levels.filter((level) => level.status === "completed").length} levels cleared
-                    </Text>
-                    <Text style={styles.levelJourneySummaryText}>
-                      {levelProgress.nextLevel
-                        ? `${Math.max(0, levelProgress.nextLevel.points - levelProgress.points)} pts to next`
-                        : "Top tier reached"}
-                    </Text>
-                  </View>
-                  <View style={styles.levelChipRow}>
-                    {levelJourney.levels.map((level) => (
-                      <View
-                        key={`${level.title}_legend`}
-                        style={[
-                          styles.levelChip,
-                          level.status === "completed" ? styles.levelChipCompleted : null,
-                          level.status === "current" ? styles.levelChipCurrent : null
-                        ]}
-                      >
-                        <Text style={styles.levelChipTitle}>{level.title}</Text>
-                        <Text style={styles.levelChipMeta}>
-                          {level.status === "completed"
-                            ? "Unlocked"
-                            : level.status === "current"
-                              ? "Current"
-                              : `${Math.max(0, level.points - levelProgress.points)} away`}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
+                  {heroPrompt ? (
+                    <PrimaryButton label={heroPrompt.actionLabel} variant="secondary" onPress={() => router.push(heroPrompt.route)} />
+                  ) : null}
                 </View>
                 <View style={styles.heroRailCard}>
-                  <Text style={styles.heroRailLabel}>{hasLogs ? "Latest unlock" : "What this unlocks"}</Text>
+                  <Text style={styles.heroRailLabel}>{hasLogs ? "One insight" : "What this unlocks"}</Text>
                   <Text style={styles.heroRailBody}>
                     {hasLogs
-                      ? insightCards[0]?.title ?? nextAction.summary
+                      ? heroInsight?.title ?? nextAction.summary
                       : "Log one game to unlock your personal record, your favorite-team split, and the first version of your Fan Résumé."}
                   </Text>
-                  {hasLogs && insightCards[0] ? <Text style={styles.heroRailMeta}>{insightCards[0].body}</Text> : null}
+                  {hasLogs && heroInsight ? <Text style={styles.heroRailMeta}>{heroInsight.body}</Text> : null}
                   <StatusPill label={heroStatusLabel} tone={heroStatusTone} />
                 </View>
               </View>
@@ -962,24 +918,6 @@ export function HomeScreen() {
                 meta={`${stats.teamSeenSummaries.length} teams seen`}
                 inverse
               />
-            </View>
-            <View style={styles.heroGranularRow}>
-              <View style={styles.heroGranularChip}>
-                <Text style={styles.heroGranularLabel}>Home runs seen</Text>
-                <Text style={styles.heroGranularValue}>{stats.witnessedHomeRuns}</Text>
-              </View>
-              <View style={styles.heroGranularChip}>
-                <Text style={styles.heroGranularLabel}>Best attendance streak</Text>
-                <Text style={styles.heroGranularValue}>{levelProgress.streaks.bestWeeks} week{levelProgress.streaks.bestWeeks === 1 ? "" : "s"}</Text>
-              </View>
-              <View style={styles.heroGranularChip}>
-                <Text style={styles.heroGranularLabel}>Teams seen</Text>
-                <Text style={styles.heroGranularValue}>{stats.teamSeenSummaries.length}</Text>
-              </View>
-              <View style={styles.heroGranularChip}>
-                <Text style={styles.heroGranularLabel}>Current pace</Text>
-                <Text style={styles.heroGranularValue}>{levelProgress.points} pts</Text>
-              </View>
             </View>
 
             {persistenceError ? <Text style={styles.heroError}>{persistenceError}</Text> : null}
@@ -1111,10 +1049,47 @@ export function HomeScreen() {
                 }
               />
               <InsightCard
-                eyebrow="Level scoring"
-                title={`${levelProgress.counts.games} games • ${levelProgress.counts.stadiums} stadiums`}
-                body={`HR seen ${levelProgress.counts.homeRuns} • Walk-offs ${levelProgress.counts.walkOffs} • Extra innings ${levelProgress.counts.extraInnings} • Best streak ${levelProgress.counts.bestStreakWeeks} weeks`}
+                eyebrow="Level journey"
+                title={levelProgress.currentLevel.title}
+                body={`${levelProgress.points} pts • ${levelProgress.nextLevel ? `${Math.max(0, levelProgress.nextLevel.points - levelProgress.points)} to ${levelProgress.nextLevel.title}` : "Top tier reached"} • Best streak ${levelProgress.counts.bestStreakWeeks} weeks`}
               />
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${levelJourney.topProgress * 100}%` }]} />
+            </View>
+            <View style={styles.levelMilestoneRow}>
+              {levelJourney.levels.map((level) => (
+                <View key={level.title} style={styles.levelMilestone}>
+                  <View
+                    style={[
+                      styles.levelMilestoneDot,
+                      level.status === "completed" ? styles.levelMilestoneDotCompleted : null,
+                      level.status === "current" ? styles.levelMilestoneDotCurrent : null
+                    ]}
+                  />
+                </View>
+              ))}
+            </View>
+            <View style={styles.levelChipRow}>
+              {levelJourney.levels.map((level) => (
+                <View
+                  key={`${level.title}_legend`}
+                  style={[
+                    styles.levelChip,
+                    level.status === "completed" ? styles.levelChipCompleted : null,
+                    level.status === "current" ? styles.levelChipCurrent : null
+                  ]}
+                >
+                  <Text style={styles.levelChipTitle}>{level.title}</Text>
+                  <Text style={styles.levelChipMeta}>
+                    {level.status === "completed"
+                      ? "Unlocked"
+                      : level.status === "current"
+                        ? "Current"
+                        : `${Math.max(0, level.points - levelProgress.points)} away`}
+                  </Text>
+                </View>
+              ))}
             </View>
           </SectionCard>
 

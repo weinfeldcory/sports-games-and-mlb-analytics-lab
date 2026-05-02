@@ -5,6 +5,7 @@ import { Screen } from "../src/components/common/Screen";
 import { PrimaryButton } from "../src/components/common/PrimaryButton";
 import { SectionCard } from "../src/components/common/SectionCard";
 import { useAppData } from "../src/providers/AppDataProvider";
+import { useResponsiveLayout } from "../src/styles/responsive";
 import { colors, spacing } from "../src/styles/tokens";
 import { formatGameLabel } from "../src/lib/formatters";
 import type { Game } from "@mlb-attendance/domain";
@@ -63,6 +64,7 @@ function getMilestoneMessage(totalGames: number, stadiums: number) {
 
 export default function LogRecapScreen() {
   const router = useRouter();
+  const responsive = useResponsiveLayout();
   const { logId } = useLocalSearchParams<{ logId?: string }>();
   const { isHydrated, isAuthenticated, attendanceLogs, games, teams, venues, stats } = useAppData();
   const authRoute = "/auth" as Href;
@@ -83,42 +85,79 @@ export default function LogRecapScreen() {
     return <Redirect href={"/(tabs)/history" as Href} />;
   }
 
+  const recapInsights = [
+    {
+      label: "Total games",
+      value: String(stats.totalGamesAttended),
+      detail: `${stats.wins}-${stats.losses} overall in your ledger`
+    },
+    {
+      label: "Stadiums",
+      value: String(stats.uniqueStadiumsVisited),
+      detail: `${getMilestoneMessage(stats.totalGamesAttended, stats.uniqueStadiumsVisited)}`
+    },
+    {
+      label: "Record",
+      value: stats.favoriteTeamSplit ? `${stats.favoriteTeamSplit.wins}-${stats.favoriteTeamSplit.losses}` : `${stats.wins}-${stats.losses}`,
+      detail: stats.favoriteTeamSplit ? `${stats.favoriteTeamSplit.teamName} when you attend` : "Overall attended record"
+    }
+  ];
+  const unlockCards = [
+    game.walkOff ? "Walk-off added to your ledger." : null,
+    game.featuredPlayerHomeRun ? `${game.featuredPlayerHomeRun} left the yard in this one.` : null,
+    log.memorableMoment?.trim() ? "You also saved the story behind the box score." : null
+  ].filter(Boolean) as string[];
+
   return (
     <Screen
       title="Game Added"
-      subtitle="A quick recap of what just changed in your ledger."
+      subtitle="What that save just unlocked in your ledger."
     >
-      <SectionCard title="Your Latest Add">
-        <Text style={styles.successTitle}>Game added to your ledger.</Text>
-        <Text style={styles.primaryText}>{label.title}</Text>
-        <Text style={styles.secondaryText}>{label.subtitle}</Text>
-        <Text style={styles.secondaryText}>Final: {label.score}</Text>
+      <SectionCard title="You added this game">
+        <View style={styles.heroCard}>
+          <Text style={styles.successTitle}>Added to your MLB ledger</Text>
+          <Text style={styles.primaryText}>{label.title}</Text>
+          <Text style={styles.secondaryText}>{label.subtitle}</Text>
+          <Text style={styles.secondaryText}>Final score: {label.score}</Text>
+        </View>
+      </SectionCard>
+
+      <SectionCard title="What this unlocked">
+        <View style={[styles.statGrid, responsive.isCompact ? styles.statGridCompact : null]}>
+          {recapInsights.map((insight) => (
+            <View key={insight.label} style={styles.statCard}>
+              <Text style={styles.statLabel}>{insight.label}</Text>
+              <Text style={styles.statValue}>{insight.value}</Text>
+              <Text style={styles.secondaryText}>{insight.detail}</Text>
+            </View>
+          ))}
+        </View>
+        {unlockCards.length ? (
+          <View style={styles.unlockStack}>
+            {unlockCards.slice(0, 2).map((card) => (
+              <View key={card} style={styles.unlockCard}>
+                <Text style={styles.primaryText}>{card}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
       </SectionCard>
 
       <View style={styles.grid}>
-        <SectionCard title="Ledger Update">
-          <View style={styles.statGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Total games</Text>
-              <Text style={styles.statValue}>{stats.totalGamesAttended}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Stadiums</Text>
-              <Text style={styles.statValue}>{stats.uniqueStadiumsVisited}</Text>
-            </View>
-          </View>
-          <Text style={styles.secondaryText}>
-            Favorite-team record: {stats.favoriteTeamSplit ? `${stats.favoriteTeamSplit.wins}-${stats.favoriteTeamSplit.losses}` : `${stats.wins}-${stats.losses}`}
-          </Text>
-          <Text style={styles.secondaryText}>{getMilestoneMessage(stats.totalGamesAttended, stats.uniqueStadiumsVisited)}</Text>
-        </SectionCard>
-
         <SectionCard title="Player Snapshot">
           {isPlayerDataComplete ? (
             <Text style={styles.primaryText}>{gameInsight ?? "Player data is attached, but this game did not produce one standout line yet."}</Text>
           ) : (
-            <Text style={styles.secondaryText}>Player insights for this game are still being backfilled. Your ledger saved correctly.</Text>
+            <Text style={styles.secondaryText}>Player insights for this game are still being prepared. Your save is secure and the player layer will fill in as coverage catches up.</Text>
           )}
+        </SectionCard>
+
+        <SectionCard title="Next best action">
+          <View style={styles.actionStack}>
+            <PrimaryButton label="Log Another Game" onPress={() => router.push("/(tabs)/log-game" as Href)} />
+            <PrimaryButton label="View Fan Résumé" variant="secondary" onPress={() => router.push("/(tabs)/stats" as Href)} />
+            <PrimaryButton label="Open Game Detail" variant="secondary" onPress={() => router.push((`/logged-game/${log.id}`) as Href)} />
+          </View>
         </SectionCard>
       </View>
 
@@ -130,14 +169,16 @@ export default function LogRecapScreen() {
 
       <View style={styles.actionStack}>
         <PrimaryButton label="View Dashboard" onPress={() => router.push("/(tabs)" as Href)} />
-        <PrimaryButton label="Add Details / Memory" onPress={() => router.push((`/logged-game/${log.id}`) as Href)} />
-        <PrimaryButton label="Log Another Game" onPress={() => router.push("/(tabs)/log-game" as Href)} />
+        <PrimaryButton label="Add Details / Memory" variant="secondary" onPress={() => router.push((`/logged-game/${log.id}`) as Href)} />
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  heroCard: {
+    gap: spacing.sm
+  },
   successTitle: {
     fontSize: 20,
     fontWeight: "800",
@@ -159,10 +200,15 @@ const styles = StyleSheet.create({
   },
   statGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.md
+  },
+  statGridCompact: {
+    flexDirection: "column"
   },
   statCard: {
     flex: 1,
+    minWidth: 160,
     backgroundColor: colors.slate050,
     borderWidth: 1,
     borderColor: colors.slate200,
@@ -184,5 +230,15 @@ const styles = StyleSheet.create({
   },
   actionStack: {
     gap: spacing.sm
+  },
+  unlockStack: {
+    gap: spacing.sm
+  },
+  unlockCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.slate200,
+    backgroundColor: colors.white,
+    padding: spacing.md
   }
 });

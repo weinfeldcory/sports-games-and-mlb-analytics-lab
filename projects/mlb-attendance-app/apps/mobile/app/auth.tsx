@@ -1,7 +1,7 @@
 import { Redirect, useRouter } from "expo-router";
 import type { Href } from "expo-router";
 import { useState } from "react";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { LabeledInput } from "../src/components/common/LabeledInput";
 import { PrimaryButton } from "../src/components/common/PrimaryButton";
 import { SectionCard } from "../src/components/common/SectionCard";
@@ -102,105 +102,111 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.backgroundOrbOne} />
-        <View style={styles.backgroundOrbTwo} />
+      <KeyboardAvoidingView
+        style={styles.keyboardShell}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
+      >
+        <ScrollView contentContainerStyle={[styles.scroll, width < 640 ? styles.scrollCompact : null]} keyboardShouldPersistTaps="handled">
+          <View style={styles.backgroundOrbOne} />
+          <View style={styles.backgroundOrbTwo} />
 
-        <View style={styles.shell}>
-          <View style={styles.hero}>
-            <Text style={styles.title}>
-              {mode === "signin" ? `Welcome to ${APP_NAME}.` : `Join ${APP_NAME}.`}
-            </Text>
-            <Text style={styles.subtitle}>
-              {mode === "signin"
-                ? "Your home for a personal fandom ledger. Log games, follow friends, and keep building your record."
-                : "Start your personal fandom ledger and save the live events that define your fan story."}
-            </Text>
-          </View>
+          <View style={styles.shell}>
+            <View style={[styles.hero, width < 640 ? styles.heroCompact : null]}>
+              <Text style={styles.title}>
+                {mode === "signin" ? `Welcome to ${APP_NAME}.` : `Join ${APP_NAME}.`}
+              </Text>
+              <Text style={styles.subtitle}>
+                {mode === "signin"
+                  ? "Your home for a personal fandom ledger. Log games, follow friends, and keep building your record."
+                  : "Start your personal fandom ledger and save the live events that define your fan story."}
+              </Text>
+            </View>
 
-          <View style={[styles.cardWrap, isWide ? styles.cardWrapWide : null]}>
-            <SectionCard title={mode === "signin" ? "Log In" : "Create Account"}>
-              {mode === "signup" ? (
+            <View style={[styles.cardWrap, isWide ? styles.cardWrapWide : null]}>
+              <SectionCard title={mode === "signin" ? "Log In" : "Create Account"}>
+                {mode === "signup" ? (
+                  <LabeledInput
+                    label="Display name"
+                    value={displayName}
+                    onChangeText={setDisplayName}
+                    placeholder="Cory"
+                  />
+                ) : null}
                 <LabeledInput
-                  label="Display name"
-                  value={displayName}
-                  onChangeText={setDisplayName}
-                  placeholder="Cory"
+                  label={identifierLabel}
+                  value={identifier}
+                  onChangeText={setIdentifier}
+                  placeholder={identifierPlaceholder}
+                  autoCapitalize="none"
+                  keyboardType={isHosted ? "email-address" : "default"}
+                  returnKeyType={mode === "signin" ? "next" : "next"}
                 />
-              ) : null}
-              <LabeledInput
-                label={identifierLabel}
-                value={identifier}
-                onChangeText={setIdentifier}
-                placeholder={identifierPlaceholder}
-                autoCapitalize="none"
-                keyboardType={isHosted ? "email-address" : "default"}
-                returnKeyType={mode === "signin" ? "next" : "next"}
-              />
-              <LabeledInput
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Password"
-                autoCapitalize="none"
-                secureTextEntry
-                returnKeyType={mode === "signin" ? "go" : "done"}
-                onSubmitEditing={() => {
-                  if (!isSubmitting) {
-                    void handleSubmit();
+                <LabeledInput
+                  label="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  autoCapitalize="none"
+                  secureTextEntry
+                  returnKeyType={mode === "signin" ? "go" : "done"}
+                  onSubmitEditing={() => {
+                    if (!isSubmitting) {
+                      void handleSubmit();
+                    }
+                  }}
+                />
+                <PrimaryButton
+                  label={
+                    isSubmitting
+                      ? "Saving..."
+                      : mode === "signin"
+                        ? "Log In"
+                        : "Create Account"
                   }
-                }}
-              />
-              <PrimaryButton
-                label={
-                  isSubmitting
-                    ? "Saving..."
-                    : mode === "signin"
-                      ? "Log In"
-                      : "Create Account"
-                }
-                onPress={handleSubmit}
-                disabled={isSubmitting}
-              />
-              {mode === "signin" ? (
+                  onPress={handleSubmit}
+                  disabled={isSubmitting}
+                />
+                {mode === "signin" ? (
+                  <View style={styles.secondaryActionRow}>
+                    <Text style={styles.secondaryActionCopy}>Forgot your password?</Text>
+                    <Pressable onPress={handlePasswordHelp} disabled={isRequestingReset}>
+                      <Text style={styles.secondaryActionLink}>
+                        {isRequestingReset ? "Sending reset..." : isHosted ? "Reset password" : "Get help"}
+                      </Text>
+                    </Pressable>
+                  </View>
+                ) : null}
                 <View style={styles.secondaryActionRow}>
-                  <Text style={styles.secondaryActionCopy}>Forgot your password?</Text>
-                  <Pressable onPress={handlePasswordHelp} disabled={isRequestingReset}>
+                  <Text style={styles.secondaryActionCopy}>
+                    {mode === "signin" ? "Need an account?" : "Already have an account?"}
+                  </Text>
+                  <Pressable onPress={() => setMode(mode === "signin" ? "signup" : "signin")}>
                     <Text style={styles.secondaryActionLink}>
-                      {isRequestingReset ? "Sending reset..." : isHosted ? "Reset password" : "Get help"}
+                      {mode === "signin" ? "Create account" : "Log in"}
                     </Text>
                   </Pressable>
                 </View>
-              ) : null}
-              <View style={styles.secondaryActionRow}>
-                <Text style={styles.secondaryActionCopy}>
-                  {mode === "signin" ? "Need an account?" : "Already have an account?"}
-                </Text>
-                <Pressable onPress={() => setMode(mode === "signin" ? "signup" : "signin")}>
-                  <Text style={styles.secondaryActionLink}>
-                    {mode === "signin" ? "Create account" : "Log in"}
-                  </Text>
-                </Pressable>
-              </View>
-              <View style={styles.legalRow}>
-                <Pressable onPress={() => router.push(termsRoute)}>
-                  <Text style={styles.legalLink}>Terms</Text>
-                </Pressable>
-                <Text style={styles.legalDivider}>•</Text>
-                <Pressable onPress={() => router.push(privacyRoute)}>
-                  <Text style={styles.legalLink}>Privacy</Text>
-                </Pressable>
-                <Text style={styles.legalDivider}>•</Text>
-                <Pressable onPress={() => router.push(betaDisclaimerRoute)}>
-                  <Text style={styles.legalLink}>Beta Disclaimer</Text>
-                </Pressable>
-              </View>
-              {helpMessage ? <Text style={styles.helpText}>{helpMessage}</Text> : null}
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
-            </SectionCard>
+                <View style={styles.legalRow}>
+                  <Pressable onPress={() => router.push(termsRoute)}>
+                    <Text style={styles.legalLink}>Terms</Text>
+                  </Pressable>
+                  <Text style={styles.legalDivider}>•</Text>
+                  <Pressable onPress={() => router.push(privacyRoute)}>
+                    <Text style={styles.legalLink}>Privacy</Text>
+                  </Pressable>
+                  <Text style={styles.legalDivider}>•</Text>
+                  <Pressable onPress={() => router.push(betaDisclaimerRoute)}>
+                    <Text style={styles.legalLink}>Beta Disclaimer</Text>
+                  </Pressable>
+                </View>
+                {helpMessage ? <Text style={styles.helpText}>{helpMessage}</Text> : null}
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+              </SectionCard>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -210,10 +216,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.canvas
   },
+  keyboardShell: {
+    flex: 1
+  },
   scroll: {
     minHeight: "100%",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg
+  },
+  scrollCompact: {
+    paddingHorizontal: spacing.sm
   },
   loadingShell: {
     flex: 1,
@@ -257,6 +269,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xl,
     gap: spacing.sm
+  },
+  heroCompact: {
+    borderRadius: 22,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg
   },
   title: {
     fontSize: 34,
