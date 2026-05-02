@@ -11,7 +11,7 @@ import { useAppData } from "../../providers/AppDataProvider";
 import { colors, spacing } from "../../styles/tokens";
 import { formatGameLabel } from "../../lib/formatters";
 import type { AttendanceLog } from "@mlb-attendance/domain";
-import { createDraft, formatHitterLine, formatPitcherLine, getStartingPitcher, getTopHitters } from "./gameDetailHelpers";
+import { createDraft, formatHitterLine, formatPitcherLine, getDerivedHistoryMoments, getStartingPitcher, getTopHitters } from "./gameDetailHelpers";
 
 export function HistoryScreen() {
   const router = useRouter();
@@ -415,11 +415,47 @@ export function HistoryScreen() {
           const homeStarter = getStartingPitcher(game, game.homeTeamId);
           const awayTopHitters = getTopHitters(game, game.awayTeamId);
           const homeTopHitters = getTopHitters(game, game.homeTeamId);
+          const derivedMoments = getDerivedHistoryMoments(log, game, teamsById);
+          const primaryMoments = derivedMoments.slice(0, 2);
+          const momentTags = [...new Set(derivedMoments.slice(0, 3).map((moment) => moment.tag))];
+          const fallbackSummary = awayTopHitters[0]
+            ? `${awayTopHitters[0].playerName}: ${formatHitterLine(awayTopHitters[0])}`
+            : awayStarter
+              ? `${awayStarter.pitcherName}: ${formatPitcherLine(awayStarter)}`
+              : homeTopHitters[0]
+                ? `${homeTopHitters[0].playerName}: ${formatHitterLine(homeTopHitters[0])}`
+                : homeStarter
+                  ? `${homeStarter.pitcherName}: ${formatPitcherLine(homeStarter)}`
+                  : `Final ${label.score}`;
 
           return (
             <SectionCard key={log.id} title={label.title}>
               <Text style={styles.subtitle}>{label.subtitle}</Text>
               <Text style={styles.score}>Final: {label.score}</Text>
+              {momentTags.length ? (
+                <View style={styles.eventRow}>
+                  {momentTags.map((tag) => (
+                    <View key={`${log.id}_${tag}`} style={styles.eventPill}>
+                      <Text style={styles.eventLabel}>{tag}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+              {primaryMoments.length ? (
+                <View style={styles.momentStack}>
+                  {primaryMoments.map((moment) => (
+                    <View key={moment.key} style={styles.momentCard}>
+                      <Text style={styles.momentTitle}>{moment.title}</Text>
+                      <Text style={styles.momentDescription}>{moment.description}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.momentCard}>
+                  <Text style={styles.momentTitle}>Game snapshot</Text>
+                  <Text style={styles.momentDescription}>{fallbackSummary}</Text>
+                </View>
+              )}
               {isEditing ? (
                 <>
                   <View style={[styles.formGrid, isWide ? styles.formGridWide : null]}>
@@ -656,6 +692,27 @@ const styles = StyleSheet.create({
   formColumn: {
     flex: 1,
     gap: spacing.md
+  },
+  momentStack: {
+    gap: spacing.sm
+  },
+  momentCard: {
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.slate200,
+    borderRadius: 14,
+    padding: spacing.md,
+    backgroundColor: colors.white
+  },
+  momentTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.slate900
+  },
+  momentDescription: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.slate700
   },
   detail: {
     fontSize: 14,
