@@ -5,6 +5,7 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowD
 import { LabeledInput } from "../src/components/common/LabeledInput";
 import { PrimaryButton } from "../src/components/common/PrimaryButton";
 import { SectionCard } from "../src/components/common/SectionCard";
+import { APP_NAME } from "../src/config/brand";
 import { useAppData } from "../src/providers/AppDataProvider";
 import { colors, spacing } from "../src/styles/tokens";
 
@@ -108,10 +109,12 @@ export default function AuthScreen() {
         <View style={styles.shell}>
           <View style={styles.hero}>
             <Text style={styles.title}>
-              {mode === "signin" ? "Track every MLB game you've attended." : "Create your baseball ledger."}
+              {mode === "signin" ? `Welcome to ${APP_NAME}.` : `Join ${APP_NAME}.`}
             </Text>
             <Text style={styles.subtitle}>
-              {mode === "signin" ? "Log in to continue." : "Save your games and build your attendance history."}
+              {mode === "signin"
+                ? "Your home for a personal fandom ledger. Log games, follow friends, and keep building your record."
+                : "Start your personal fandom ledger and save the live events that define your fan story."}
             </Text>
           </View>
 

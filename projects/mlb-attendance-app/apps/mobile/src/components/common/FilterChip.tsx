@@ -24,6 +24,8 @@ export function FilterChip({ label, selected = false, onPress }: FilterChipProps
 
 const styles = StyleSheet.create({
   chip: {
+    alignSelf: "flex-start",
+    maxWidth: "100%",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
@@ -43,7 +45,8 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "800",
-    color: colors.primary
+    color: colors.primary,
+    flexShrink: 1
   },
   labelSelected: {
     color: colors.textInverse
