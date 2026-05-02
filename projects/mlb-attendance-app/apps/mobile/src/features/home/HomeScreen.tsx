@@ -244,6 +244,28 @@ function buildLevelProgress(params: {
   };
 }
 
+function buildLevelJourney(points: number) {
+  const topThreshold = levelThresholds[levelThresholds.length - 1]?.points ?? 0;
+  const topProgress = topThreshold > 0 ? Math.min(1, points / topThreshold) : 0;
+
+  return {
+    topProgress,
+    levels: levelThresholds.map((level, index) => {
+      const nextLevel = levelThresholds[index + 1];
+      const status = points >= level.points
+        ? nextLevel && points < nextLevel.points
+          ? "current"
+          : "completed"
+        : "upcoming";
+
+      return {
+        ...level,
+        status
+      };
+    })
+  };
+}
+
 function buildAttendancePattern(games: Array<{ startDateTime?: string }>) {
   const patternBuckets = [
     { key: "day", label: "1-4 PM", sortValue: 13 },
@@ -808,6 +830,7 @@ export function HomeScreen() {
   const favoriteRecord = stats.favoriteTeamSplit
     ? `${stats.favoriteTeamSplit.wins}-${stats.favoriteTeamSplit.losses}`
     : `${stats.wins}-${stats.losses}`;
+  const levelJourney = useMemo(() => buildLevelJourney(levelProgress.points), [levelProgress.points]);
   const heroStatusLabel =
     persistenceStatus === "error"
       ? "Sync needs attention"
@@ -852,15 +875,53 @@ export function HomeScreen() {
 
               <View style={styles.heroRail}>
                 <View style={styles.heroRailCard}>
-                  <Text style={styles.heroRailLabel}>Current level</Text>
-                  <Text style={styles.heroRailValue}>{hasLogs ? `${levelProgress.points} pts` : "0 pts"}</Text>
+                  <Text style={styles.heroRailLabel}>Level journey</Text>
+                  <Text style={styles.heroRailValue}>{hasLogs ? levelProgress.currentLevel.title : "Rookie Scorer"}</Text>
                   <Text style={styles.heroRailMeta}>
                     {levelProgress.nextLevel
                       ? `${levelProgress.nextLevel.points - levelProgress.points} to ${levelProgress.nextLevel.title}`
                       : "Top level reached"}
                   </Text>
                   <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { width: `${levelProgress.progress * 100}%` }]} />
+                    <View style={[styles.progressFill, { width: `${levelJourney.topProgress * 100}%` }]} />
+                  </View>
+                  <View style={styles.levelMilestoneRow}>
+                    {levelJourney.levels.map((level) => (
+                      <View key={level.title} style={styles.levelMilestone}>
+                        <View
+                          style={[
+                            styles.levelMilestoneDot,
+                            level.status === "completed" ? styles.levelMilestoneDotCompleted : null,
+                            level.status === "current" ? styles.levelMilestoneDotCurrent : null
+                          ]}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                  <View style={styles.levelLegendStack}>
+                    {levelJourney.levels.map((level) => (
+                      <View key={`${level.title}_legend`} style={styles.levelLegendRow}>
+                        <View
+                          style={[
+                            styles.levelLegendBadge,
+                            level.status === "completed" ? styles.levelLegendBadgeCompleted : null,
+                            level.status === "current" ? styles.levelLegendBadgeCurrent : null
+                          ]}
+                        >
+                          <Text style={styles.levelLegendPoints}>{level.points}</Text>
+                        </View>
+                        <View style={styles.levelLegendCopy}>
+                          <Text style={styles.levelLegendTitle}>{level.title}</Text>
+                          <Text style={styles.levelLegendMeta}>
+                            {level.status === "completed"
+                              ? "Unlocked"
+                              : level.status === "current"
+                                ? "Current level"
+                                : `${Math.max(0, level.points - levelProgress.points)} pts away`}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
                   </View>
                 </View>
                 <View style={styles.heroRailCard}>
@@ -877,14 +938,42 @@ export function HomeScreen() {
             </View>
 
             <View style={[styles.metricGrid, responsive.isCompact ? styles.metricGridCompact : null]}>
-              <MetricCard label="Games" value={String(stats.totalGamesAttended)} inverse />
+              <MetricCard
+                label="Games"
+                value={String(stats.totalGamesAttended)}
+                meta={`${stats.wins}-${stats.losses} overall`}
+                inverse
+              />
               <MetricCard
                 label={favoriteTeam?.name ? `${favoriteTeam.abbreviation} Record` : "Record"}
                 value={favoriteRecord}
                 meta={favoriteTeam ? "Favorite-team split" : "All logged games"}
                 inverse
               />
-              <MetricCard label="Stadiums" value={String(stats.uniqueStadiumsVisited)} inverse />
+              <MetricCard
+                label="Stadiums"
+                value={String(stats.uniqueStadiumsVisited)}
+                meta={`${stats.teamSeenSummaries.length} teams seen`}
+                inverse
+              />
+            </View>
+            <View style={styles.heroGranularRow}>
+              <View style={styles.heroGranularChip}>
+                <Text style={styles.heroGranularLabel}>Home runs seen</Text>
+                <Text style={styles.heroGranularValue}>{stats.witnessedHomeRuns}</Text>
+              </View>
+              <View style={styles.heroGranularChip}>
+                <Text style={styles.heroGranularLabel}>Best attendance streak</Text>
+                <Text style={styles.heroGranularValue}>{levelProgress.streaks.bestWeeks} week{levelProgress.streaks.bestWeeks === 1 ? "" : "s"}</Text>
+              </View>
+              <View style={styles.heroGranularChip}>
+                <Text style={styles.heroGranularLabel}>Teams seen</Text>
+                <Text style={styles.heroGranularValue}>{stats.teamSeenSummaries.length}</Text>
+              </View>
+              <View style={styles.heroGranularChip}>
+                <Text style={styles.heroGranularLabel}>Current pace</Text>
+                <Text style={styles.heroGranularValue}>{levelProgress.points} pts</Text>
+              </View>
             </View>
 
             {persistenceError ? <Text style={styles.heroError}>{persistenceError}</Text> : null}
@@ -1335,6 +1424,34 @@ const styles = StyleSheet.create({
   metricGridCompact: {
     gap: spacing.sm
   },
+  heroGranularRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  heroGranularChip: {
+    minWidth: 148,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(255,253,248,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,253,248,0.1)",
+    gap: 2
+  },
+  heroGranularLabel: {
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    fontWeight: "800",
+    color: "rgba(255,253,248,0.62)"
+  },
+  heroGranularValue: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "900",
+    color: colors.textInverse
+  },
   progressTrack: {
     height: 10,
     borderRadius: 999,
@@ -1345,6 +1462,80 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 999,
     backgroundColor: colors.warning
+  },
+  levelMilestoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.xs
+  },
+  levelMilestone: {
+    flex: 1,
+    alignItems: "center"
+  },
+  levelMilestoneDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,253,248,0.22)",
+    borderWidth: 1,
+    borderColor: "rgba(255,253,248,0.28)"
+  },
+  levelMilestoneDotCompleted: {
+    backgroundColor: colors.warning,
+    borderColor: colors.warning
+  },
+  levelMilestoneDotCurrent: {
+    width: 14,
+    height: 14,
+    backgroundColor: colors.textInverse,
+    borderColor: colors.textInverse
+  },
+  levelLegendStack: {
+    gap: spacing.sm
+  },
+  levelLegendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  levelLegendBadge: {
+    minWidth: 52,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(255,253,248,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,253,248,0.14)",
+    alignItems: "center"
+  },
+  levelLegendBadgeCompleted: {
+    backgroundColor: colors.warning,
+    borderColor: colors.warning
+  },
+  levelLegendBadgeCurrent: {
+    backgroundColor: colors.textInverse,
+    borderColor: colors.textInverse
+  },
+  levelLegendPoints: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: colors.surfaceDark
+  },
+  levelLegendCopy: {
+    flex: 1,
+    gap: 2
+  },
+  levelLegendTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "800",
+    color: colors.textInverse
+  },
+  levelLegendMeta: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: "rgba(255,253,248,0.68)"
   },
   heroLoading: {
     fontSize: 18,
