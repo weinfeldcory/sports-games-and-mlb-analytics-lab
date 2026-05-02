@@ -898,28 +898,34 @@ export function HomeScreen() {
                       </View>
                     ))}
                   </View>
-                  <View style={styles.levelLegendStack}>
+                  <View style={styles.levelJourneySummary}>
+                    <Text style={styles.levelJourneySummaryText}>
+                      {levelJourney.levels.filter((level) => level.status === "completed").length} levels cleared
+                    </Text>
+                    <Text style={styles.levelJourneySummaryText}>
+                      {levelProgress.nextLevel
+                        ? `${Math.max(0, levelProgress.nextLevel.points - levelProgress.points)} pts to next`
+                        : "Top tier reached"}
+                    </Text>
+                  </View>
+                  <View style={styles.levelChipRow}>
                     {levelJourney.levels.map((level) => (
-                      <View key={`${level.title}_legend`} style={styles.levelLegendRow}>
-                        <View
-                          style={[
-                            styles.levelLegendBadge,
-                            level.status === "completed" ? styles.levelLegendBadgeCompleted : null,
-                            level.status === "current" ? styles.levelLegendBadgeCurrent : null
-                          ]}
-                        >
-                          <Text style={styles.levelLegendPoints}>{level.points}</Text>
-                        </View>
-                        <View style={styles.levelLegendCopy}>
-                          <Text style={styles.levelLegendTitle}>{level.title}</Text>
-                          <Text style={styles.levelLegendMeta}>
-                            {level.status === "completed"
-                              ? "Unlocked"
-                              : level.status === "current"
-                                ? "Current level"
-                                : `${Math.max(0, level.points - levelProgress.points)} pts away`}
-                          </Text>
-                        </View>
+                      <View
+                        key={`${level.title}_legend`}
+                        style={[
+                          styles.levelChip,
+                          level.status === "completed" ? styles.levelChipCompleted : null,
+                          level.status === "current" ? styles.levelChipCurrent : null
+                        ]}
+                      >
+                        <Text style={styles.levelChipTitle}>{level.title}</Text>
+                        <Text style={styles.levelChipMeta}>
+                          {level.status === "completed"
+                            ? "Unlocked"
+                            : level.status === "current"
+                              ? "Current"
+                              : `${Math.max(0, level.points - levelProgress.points)} away`}
+                        </Text>
                       </View>
                     ))}
                   </View>
@@ -1491,51 +1497,51 @@ const styles = StyleSheet.create({
     backgroundColor: colors.textInverse,
     borderColor: colors.textInverse
   },
-  levelLegendStack: {
-    gap: spacing.sm
-  },
-  levelLegendRow: {
+  levelJourneySummary: {
     flexDirection: "row",
-    alignItems: "center",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: spacing.sm
   },
-  levelLegendBadge: {
-    minWidth: 52,
+  levelJourneySummaryText: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: "rgba(255,253,248,0.68)",
+    fontWeight: "700"
+  },
+  levelChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  levelChip: {
+    minWidth: 112,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
     backgroundColor: "rgba(255,253,248,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,253,248,0.14)",
-    alignItems: "center"
+    gap: 2
   },
-  levelLegendBadgeCompleted: {
+  levelChipCompleted: {
     backgroundColor: colors.warning,
     borderColor: colors.warning
   },
-  levelLegendBadgeCurrent: {
+  levelChipCurrent: {
     backgroundColor: colors.textInverse,
     borderColor: colors.textInverse
   },
-  levelLegendPoints: {
-    fontSize: 12,
-    fontWeight: "900",
+  levelChipTitle: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "800",
     color: colors.surfaceDark
   },
-  levelLegendCopy: {
-    flex: 1,
-    gap: 2
-  },
-  levelLegendTitle: {
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: "800",
-    color: colors.textInverse
-  },
-  levelLegendMeta: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: "rgba(255,253,248,0.68)"
+  levelChipMeta: {
+    fontSize: 11,
+    lineHeight: 15,
+    color: colors.surfaceDark
   },
   heroLoading: {
     fontSize: 18,
