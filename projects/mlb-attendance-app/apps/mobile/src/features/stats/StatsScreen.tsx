@@ -57,6 +57,47 @@ function formatEra(value: number) {
   return value.toFixed(2);
 }
 
+function formatPitchingStatLine(params: {
+  inningsPitched?: number;
+  hitsAllowed?: number;
+  runsAllowed?: number;
+  earnedRunsAllowed?: number;
+  walksAllowed?: number;
+  strikeouts?: number;
+  homeRunsAllowed?: number;
+  pitchesThrown?: number;
+  strikes?: number;
+}) {
+  const {
+    inningsPitched,
+    hitsAllowed,
+    runsAllowed,
+    earnedRunsAllowed,
+    walksAllowed,
+    strikeouts,
+    homeRunsAllowed,
+    pitchesThrown,
+    strikes
+  } = params;
+
+  const segments = [
+    inningsPitched !== undefined ? `${formatBaseballInnings(inningsPitched)} IP` : null,
+    hitsAllowed !== undefined ? `${hitsAllowed} H` : null,
+    runsAllowed !== undefined ? `${runsAllowed} R` : null,
+    earnedRunsAllowed !== undefined ? `${earnedRunsAllowed} ER` : null,
+    walksAllowed !== undefined ? `${walksAllowed} BB` : null,
+    strikeouts !== undefined ? `${strikeouts} K` : null,
+    homeRunsAllowed !== undefined ? `${homeRunsAllowed} HR` : null,
+    pitchesThrown !== undefined
+      ? strikes !== undefined
+        ? `${pitchesThrown}-${strikes} P-S`
+        : `${pitchesThrown} pitches`
+      : null
+  ].filter(Boolean);
+
+  return segments.join(" • ");
+}
+
 function getWeekdayLabel(date: string) {
   const parsed = new Date(`${date}T12:00:00Z`);
   if (Number.isNaN(parsed.getTime())) {
@@ -389,44 +430,68 @@ export function StatsScreen() {
   }, [attendanceLogs, games, profile.favoriteTeamId, splitKey, teams, venues]);
 
   const topSplitSummaries = splitSummaries.slice(0, 3);
+  const gamesById = useMemo(() => new Map(games.map((game) => [game.id, game])), [games]);
+  const venuesById = useMemo(() => new Map(venues.map((venue) => [venue.id, venue])), [venues]);
 
   const summaryCards = useMemo(() => {
     const topBatter = stats.playerBattingSummaries[0];
     const topPitcher = stats.playerPitchingSummaries[0];
     const topTeam = stats.teamSeenSummaries[0];
     const topStart = stats.topPitchingGamePerformances[0];
+    const topStartGame = topStart ? gamesById.get(topStart.gameId) : undefined;
+    const topStartVenue = topStart ? venuesById.get(topStart.venueId) : undefined;
 
     return [
       {
         label: "Best Opposing Bat Seen",
         value: topBatter ? topBatter.playerName : "No batter data",
-        detail: topBatter
+        details: topBatter
           ? `${topBatter.homeRunsSeen} HR • ${topBatter.hitsSeen} hits • ${topBatter.gamesSeen} games`
           : "Save games with batter lines to unlock this."
       },
       {
-        label: "Best Start Seen",
+        label: "Best Starting Pitching Performance You Saw",
         value: topStart ? topStart.pitcherName : "No start data",
-        detail: topStart
-          ? `Game Score ${topStart.gameScore} • ${topStart.opponentTeamName} • ${topStart.startDate}`
+        details: topStart
+          ? [
+              `${topStart.opponentTeamName} • ${topStart.startDate}${topStartVenue ? ` • ${topStartVenue.name}` : ""}`,
+              topStartGame ? `Final score ${topStartGame.awayScore}-${topStartGame.homeScore}` : null,
+              `Game Score ${topStart.gameScore}`,
+              formatPitchingStatLine({
+                inningsPitched: topStart.inningsPitched,
+                hitsAllowed: topStart.hitsAllowed,
+                runsAllowed: topStart.runsAllowed,
+                earnedRunsAllowed: topStart.earnedRunsAllowed,
+                walksAllowed: topStart.walksAllowed,
+                strikeouts: topStart.strikeouts,
+                homeRunsAllowed: topStart.homeRunsAllowed,
+                pitchesThrown: topStart.pitchesThrown,
+                strikes: topStart.strikes
+              }),
+              "Ranked by Game Score: outs and strikeouts increase the score; hits, walks, runs, and home runs lower it."
+            ].filter(Boolean)
           : "Save games with pitcher lines to unlock this."
       },
       {
         label: "Most-Seen Team",
         value: topTeam ? topTeam.teamName : "No team data",
-        detail: topTeam
+        details: topTeam
           ? `${topTeam.gamesSeen} games • ${topTeam.winsSeen}-${topTeam.lossesSeen} seen • ${topTeam.runsSeen} runs`
           : "Log games to build team coverage."
       },
       {
-        label: "Most-Seen Pitcher",
+        label: "Pitcher Seen Most",
         value: topPitcher ? topPitcher.pitcherName : "No pitcher data",
-        detail: topPitcher
-          ? `${topPitcher.appearances} apps • best ${topPitcher.bestGameScoreSeen ?? "n/a"} GS • ${topPitcher.strikeoutsSeen} K`
+        details: topPitcher
+          ? [
+              `Ranked by innings pitched in games you logged.`,
+              `${formatBaseballInnings(topPitcher.inningsSeen)} innings watched • ${topPitcher.appearances} appearances`,
+              `${topPitcher.strikeoutsSeen} strikeouts watched`
+            ]
           : "Save games with pitcher lines to unlock this."
       }
     ];
-  }, [stats.playerBattingSummaries, stats.playerPitchingSummaries, stats.teamSeenSummaries, stats.topPitchingGamePerformances]);
+  }, [gamesById, stats.playerBattingSummaries, stats.playerPitchingSummaries, stats.teamSeenSummaries, stats.topPitchingGamePerformances, venuesById]);
 
   const favoriteTeamLabel = stats.favoriteTeamSplit?.teamName ?? "Favorite Team";
   const hasAnyStats = stats.totalGamesAttended > 0;
@@ -471,7 +536,9 @@ export function StatsScreen() {
                   <View key={card.label} style={styles.summaryCard}>
                     <Text style={styles.summaryCardLabel}>{card.label}</Text>
                     <Text style={styles.summaryCardValue}>{card.value}</Text>
-                    <Text style={styles.summaryCardMeta}>{card.detail}</Text>
+                    {(Array.isArray(card.details) ? card.details : [card.details]).map((detail) => (
+                      <Text key={`${card.label}_${detail}`} style={styles.summaryCardMeta}>{detail}</Text>
+                    ))}
                   </View>
                 ))}
               </View>

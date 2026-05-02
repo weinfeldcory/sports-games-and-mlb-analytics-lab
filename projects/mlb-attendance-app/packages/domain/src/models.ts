@@ -188,10 +188,15 @@ export interface PlayerPitchingSummary {
   teams: string[];
   roles: string[];
   appearances: number;
+  starts: number;
+  outsRecordedSeen: number;
   strikeoutsSeen: number;
   inningsSeen: number;
   hitsAllowedSeen: number;
   runsAllowedSeen: number;
+  earnedRunsAllowedSeen?: number;
+  walksAllowedSeen: number;
+  homeRunsAllowedSeen: number;
   eraSeen: number;
   bestGameScoreSeen?: number;
 }
@@ -204,10 +209,17 @@ export interface PitchingGamePerformance {
   opponentTeamId: string;
   opponentTeamName: string;
   startDate: string;
+  venueId: string;
   gameScore: number;
   inningsPitched?: number;
+  hitsAllowed?: number;
   strikeouts?: number;
   runsAllowed?: number;
+  earnedRunsAllowed?: number;
+  walksAllowed?: number;
+  homeRunsAllowed?: number;
+  pitchesThrown?: number;
+  strikes?: number;
 }
 
 export interface TeamSeenSummary {

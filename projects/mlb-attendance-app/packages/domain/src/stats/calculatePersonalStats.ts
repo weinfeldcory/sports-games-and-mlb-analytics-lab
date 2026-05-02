@@ -43,12 +43,32 @@ function toEra(runsAllowed: number, inningsPitched: number) {
   return (runsAllowed * 9) / inningsPitched;
 }
 
+function toOutsRecorded(inningsPitched?: number) {
+  if (!inningsPitched) {
+    return 0;
+  }
+
+  const wholeInnings = Math.trunc(inningsPitched);
+  const partialOuts = Math.round((inningsPitched - wholeInnings) * 10);
+  return wholeInnings * 3 + partialOuts;
+}
+
+function outsToInnings(outsRecorded: number) {
+  if (!outsRecorded) {
+    return 0;
+  }
+
+  const wholeInnings = Math.floor(outsRecorded / 3);
+  const partialOuts = outsRecorded % 3;
+  return wholeInnings + partialOuts / 10;
+}
+
 function calculatePitcherGameScore(game: Game, pitcher: PitcherFromGame) {
   if (pitcher.role !== "starter") {
     return undefined;
   }
 
-  const outsRecorded = Math.round((pitcher.inningsPitched ?? 0) * 3);
+  const outsRecorded = toOutsRecorded(pitcher.inningsPitched);
   const strikeouts = pitcher.strikeouts ?? 0;
   const walksAllowed = pitcher.walksAllowed ?? 0;
   const hitsAllowed = pitcher.hitsAllowed ?? 0;
@@ -149,13 +169,19 @@ export function calculatePersonalStats(params: {
       const existing = map.get(pitcher.pitcherName);
       const teamName = teamsById.get(pitcher.teamId)?.name ?? pitcher.teamId;
       const gameScore = pitcher.gameScore ?? calculatePitcherGameScore(game, pitcher);
+      const outsRecorded = toOutsRecorded(pitcher.inningsPitched);
 
       if (existing) {
         existing.appearances += 1;
+        existing.starts += pitcher.role === "starter" ? 1 : 0;
+        existing.outsRecordedSeen += outsRecorded;
         existing.strikeoutsSeen += pitcher.strikeouts ?? 0;
-        existing.inningsSeen += pitcher.inningsPitched ?? 0;
+        existing.inningsSeen = outsToInnings(existing.outsRecordedSeen);
         existing.hitsAllowedSeen += pitcher.hitsAllowed ?? 0;
         existing.runsAllowedSeen += pitcher.runsAllowed ?? 0;
+        existing.earnedRunsAllowedSeen = (existing.earnedRunsAllowedSeen ?? 0) + (pitcher.earnedRunsAllowed ?? 0);
+        existing.walksAllowedSeen += pitcher.walksAllowed ?? 0;
+        existing.homeRunsAllowedSeen += pitcher.homeRunsAllowed ?? 0;
         existing.eraSeen = toEra(existing.runsAllowedSeen, existing.inningsSeen);
         existing.bestGameScoreSeen =
           gameScore === undefined
@@ -173,12 +199,17 @@ export function calculatePersonalStats(params: {
       map.set(pitcher.pitcherName, {
         pitcherName: pitcher.pitcherName,
         appearances: 1,
+        starts: pitcher.role === "starter" ? 1 : 0,
         teams: [teamName],
         roles: [pitcher.role],
+        outsRecordedSeen: outsRecorded,
         strikeoutsSeen: pitcher.strikeouts ?? 0,
-        inningsSeen: pitcher.inningsPitched ?? 0,
+        inningsSeen: outsToInnings(outsRecorded),
         hitsAllowedSeen: pitcher.hitsAllowed ?? 0,
         runsAllowedSeen: pitcher.runsAllowed ?? 0,
+        earnedRunsAllowedSeen: pitcher.earnedRunsAllowed,
+        walksAllowedSeen: pitcher.walksAllowed ?? 0,
+        homeRunsAllowedSeen: pitcher.homeRunsAllowed ?? 0,
         eraSeen: toEra(pitcher.runsAllowed ?? 0, pitcher.inningsPitched ?? 0),
         bestGameScoreSeen: gameScore
       });
@@ -205,10 +236,17 @@ export function calculatePersonalStats(params: {
         opponentTeamId,
         opponentTeamName,
         startDate: game.startDate,
+        venueId: game.venueId,
         gameScore,
         inningsPitched: pitcher.inningsPitched,
+        hitsAllowed: pitcher.hitsAllowed,
         strikeouts: pitcher.strikeouts,
-        runsAllowed: pitcher.runsAllowed
+        runsAllowed: pitcher.runsAllowed,
+        earnedRunsAllowed: pitcher.earnedRunsAllowed,
+        walksAllowed: pitcher.walksAllowed,
+        homeRunsAllowed: pitcher.homeRunsAllowed,
+        pitchesThrown: pitcher.pitchesThrown,
+        strikes: pitcher.strikes
       });
     });
 
@@ -328,9 +366,9 @@ export function calculatePersonalStats(params: {
     playerPitchingSummaries: [...playerPitchingMap.values()]
       .sort(
         (left, right) =>
-          (right.bestGameScoreSeen ?? Number.NEGATIVE_INFINITY) - (left.bestGameScoreSeen ?? Number.NEGATIVE_INFINITY) ||
-          right.strikeoutsSeen - left.strikeoutsSeen ||
+          right.outsRecordedSeen - left.outsRecordedSeen ||
           right.appearances - left.appearances ||
+          right.strikeoutsSeen - left.strikeoutsSeen ||
           left.pitcherName.localeCompare(right.pitcherName)
       ),
     topPitchingGamePerformances: topPitchingGamePerformances

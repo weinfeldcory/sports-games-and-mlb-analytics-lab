@@ -107,7 +107,7 @@ test("calculatePersonalStats derives totals, favorite team split, and recent mom
   assert.equal(stats.losses, 0);
   assert.equal(stats.uniqueStadiumsVisited, 2);
   assert.equal(stats.uniqueSectionsSatIn, 2);
-  assert.equal(stats.witnessedHomeRuns, 1);
+  assert.equal(stats.witnessedHomeRuns, 2);
   assert.equal(stats.totalHitsSeen, 32);
   assert.equal(stats.totalRunsSeen, 15);
   assert.equal(stats.uniquePitchersSeen, 3);
@@ -142,24 +142,51 @@ test("calculatePersonalStats derives totals, favorite team split, and recent mom
     teams: ["Yankees"],
     roles: ["starter"],
     appearances: 1,
+    starts: 1,
+    outsRecordedSeen: 27,
     strikeoutsSeen: 8,
     inningsSeen: 9,
     hitsAllowedSeen: 4,
     runsAllowedSeen: 0,
+    earnedRunsAllowedSeen: undefined,
+    walksAllowedSeen: 1,
+    homeRunsAllowedSeen: 0,
     eraSeen: 0,
-    bestGameScoreSeen: 82
+    bestGameScoreSeen: 92
   });
   assert.deepEqual(stats.playerPitchingSummaries[1], {
+    pitcherName: "Gerrit Cole",
+    teams: ["Yankees"],
+    roles: ["starter"],
+    appearances: 1,
+    starts: 1,
+    outsRecordedSeen: 21,
+    strikeoutsSeen: 9,
+    inningsSeen: 7,
+    hitsAllowedSeen: 6,
+    runsAllowedSeen: 2,
+    earnedRunsAllowedSeen: undefined,
+    walksAllowedSeen: 1,
+    homeRunsAllowedSeen: 1,
+    eraSeen: (2 * 9) / 7,
+    bestGameScoreSeen: 65
+  });
+  assert.deepEqual(stats.playerPitchingSummaries[2], {
     pitcherName: "Tanner Houck",
     teams: ["Red Sox"],
-    roles: ["starter", "reliever"],
+    roles: ["reliever", "starter"],
     appearances: 2,
+    starts: 1,
+    outsRecordedSeen: 18,
     strikeoutsSeen: 5,
     inningsSeen: 6,
     hitsAllowedSeen: 7,
     runsAllowedSeen: 5,
+    earnedRunsAllowedSeen: 0,
+    walksAllowedSeen: 2,
+    homeRunsAllowedSeen: 1,
     eraSeen: 7.5,
-    bestGameScoreSeen: 45
+    bestGameScoreSeen: 35
   });
   assert.deepEqual(stats.topPitchingGamePerformances[0], {
     gameId: "game_1",
@@ -169,10 +196,17 @@ test("calculatePersonalStats derives totals, favorite team split, and recent mom
     opponentTeamId: "team_bos",
     opponentTeamName: "Red Sox",
     startDate: "2025-07-20",
-    gameScore: 82,
+    venueId: "venue_fenway",
+    gameScore: 92,
     inningsPitched: 9,
+    hitsAllowed: 4,
     strikeouts: 8,
-    runsAllowed: 0
+    runsAllowed: 0,
+    earnedRunsAllowed: undefined,
+    walksAllowed: 1,
+    homeRunsAllowed: 0,
+    pitchesThrown: undefined,
+    strikes: undefined
   });
   assert.deepEqual(stats.teamSeenSummaries, [
     {
@@ -199,4 +233,82 @@ test("calculatePersonalStats derives totals, favorite team split, and recent mom
     ["Road shutout", "Home opener"]
   );
   assert.equal(stats.recentMoments[0]?.subtitle, "Against Red Sox on 2025-07-20");
+});
+
+test("pitcher seen most ranks by outs recorded before appearances", () => {
+  const inningsRankingGames: Game[] = [
+    {
+      id: "rank_game_1",
+      sport: "MLB",
+      startDate: "2025-05-01",
+      venueId: "venue_yankee",
+      homeTeamId: "team_nyy",
+      awayTeamId: "team_bos",
+      homeScore: 4,
+      awayScore: 2,
+      homeHits: 8,
+      awayHits: 6,
+      status: "final",
+      pitchersUsed: [
+        { teamId: "team_nyy", pitcherName: "Workhorse B", role: "starter", inningsPitched: 5.2, hitsAllowed: 4, runsAllowed: 2, earnedRunsAllowed: 2, strikeouts: 7, walksAllowed: 1, homeRunsAllowed: 0 },
+        { teamId: "team_bos", pitcherName: "Sprinter A", role: "starter", inningsPitched: 2, hitsAllowed: 5, runsAllowed: 3, earnedRunsAllowed: 3, strikeouts: 2, walksAllowed: 1, homeRunsAllowed: 1 }
+      ]
+    },
+    {
+      id: "rank_game_2",
+      sport: "MLB",
+      startDate: "2025-05-05",
+      venueId: "venue_fenway",
+      homeTeamId: "team_bos",
+      awayTeamId: "team_nyy",
+      homeScore: 3,
+      awayScore: 6,
+      homeHits: 7,
+      awayHits: 9,
+      status: "final",
+      pitchersUsed: [
+        { teamId: "team_bos", pitcherName: "Sprinter A", role: "starter", inningsPitched: 2, hitsAllowed: 6, runsAllowed: 4, earnedRunsAllowed: 4, strikeouts: 3, walksAllowed: 2, homeRunsAllowed: 1 }
+      ]
+    },
+    {
+      id: "rank_game_3",
+      sport: "MLB",
+      startDate: "2025-05-10",
+      venueId: "venue_yankee",
+      homeTeamId: "team_nyy",
+      awayTeamId: "team_bos",
+      homeScore: 2,
+      awayScore: 1,
+      homeHits: 5,
+      awayHits: 4,
+      status: "final",
+      pitchersUsed: [
+        { teamId: "team_nyy", pitcherName: "Workhorse B", role: "starter", inningsPitched: 1.0, hitsAllowed: 1, runsAllowed: 0, earnedRunsAllowed: 0, strikeouts: 1, walksAllowed: 0, homeRunsAllowed: 0 }
+      ]
+    }
+  ];
+
+  const attendanceLogs: AttendanceLog[] = inningsRankingGames.map((game, index) => ({
+    id: `rank_attendance_${index + 1}`,
+    userId: user.id,
+    gameId: game.id,
+    venueId: game.venueId,
+    attendedOn: game.startDate,
+    seat: { section: "100" },
+    witnessedEvents: []
+  }));
+
+  const stats = calculatePersonalStats({
+    user,
+    attendanceLogs,
+    games: inningsRankingGames,
+    teams,
+    venues
+  });
+
+  assert.equal(stats.playerPitchingSummaries[0]?.pitcherName, "Workhorse B");
+  assert.equal(stats.playerPitchingSummaries[0]?.outsRecordedSeen, 20);
+  assert.equal(stats.playerPitchingSummaries[0]?.inningsSeen, 6.2);
+  assert.equal(stats.playerPitchingSummaries[1]?.pitcherName, "Sprinter A");
+  assert.equal(stats.playerPitchingSummaries[1]?.appearances, 2);
 });
