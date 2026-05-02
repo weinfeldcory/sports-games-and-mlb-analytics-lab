@@ -17,7 +17,7 @@ interface AppShellProps {
 
 const navItems: { href: Href; label: string; shortLabel: string }[] = [
   { href: "/(tabs)", label: "Home", shortLabel: "Home" },
-  { href: "/(tabs)/log-game", label: "Log", shortLabel: "Log" },
+  { href: "/(tabs)/log-game", label: "Log Game", shortLabel: "Log Game" },
   { href: "/(tabs)/history", label: "History", shortLabel: "History" },
   { href: "/(tabs)/stats", label: "Stats", shortLabel: "Stats" },
   { href: "/(tabs)/profile", label: "Profile", shortLabel: "Profile" }
@@ -35,8 +35,7 @@ export function AppShell({ title, subtitle, children, scrollable = true }: AppSh
   const pathname = normalizePathname(usePathname());
   const isWeb = Platform.OS === "web";
   const responsive = useResponsiveLayout();
-  const isDesktop = responsive.isDesktop;
-  const isSmallWeb = isWeb && responsive.isNarrow;
+  const showTopNav = isWeb;
   const {
     currentAccountLabel,
     profile,
@@ -63,103 +62,94 @@ export function AppShell({ title, subtitle, children, scrollable = true }: AppSh
           ? "Hosted Sync Active"
           : "Local Only";
 
-  const content = (
+  const header = (
     <View
       style={[
-        styles.content,
-        {
-          paddingHorizontal: responsive.isCompact ? spacing.sm : spacing.md,
-          paddingTop: isSmallWeb ? spacing.xl + spacing.sm : spacing.md,
-          paddingBottom: isSmallWeb ? spacing.lg : spacing.md
-        }
+        styles.topBar,
+        responsive.isDesktop ? styles.topBarDesktop : null,
+        responsive.isCompact ? styles.topBarCompact : null,
+        { paddingHorizontal: responsive.pagePadding, paddingVertical: responsive.isCompact ? spacing.sm : spacing.md }
       ]}
     >
-      <View style={styles.backgroundGlowTop} />
-      <View style={styles.backgroundGlowBottom} />
-
-      <View style={styles.shell}>
-        <View
-          style={[
-            styles.topBar,
-            isDesktop ? styles.topBarDesktop : null,
-            responsive.isCompact ? styles.topBarCompact : null,
-            { paddingHorizontal: responsive.pagePadding, paddingVertical: responsive.isCompact ? spacing.sm : spacing.md }
-          ]}
-        >
-          <View style={styles.brandCluster}>
-            <Pressable onPress={() => router.push("/(tabs)")} style={styles.brandMark}>
-              <Text style={styles.brandMarkText}>BL</Text>
-            </Pressable>
-            <View style={styles.brandCopy}>
-              <Text style={styles.brandEyebrow}>Personal MLB Record</Text>
-              <Text style={styles.brandTitle}>Ballpark Ledger</Text>
-            </View>
-          </View>
-
-          {isDesktop ? (
-            <View style={styles.navRow}>
-              {navItems.map((item) => {
-                const active = pathname === item.href;
-                return (
-                  <Pressable key={item.label} onPress={() => router.push(item.href)} style={[styles.navItem, active ? styles.navItemActive : null]}>
-                    <Text style={[styles.navItemLabel, active ? styles.navItemLabelActive : null]}>{item.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          ) : null}
-
-          <View style={[styles.accountCluster, responsive.isCompact ? styles.accountClusterCompact : null]}>
-            <StatusPill label={statusLabel} tone={statusTone} />
-            <Pressable
-              onPress={() => router.push("/(tabs)/profile")}
-              style={[styles.accountButton, responsive.isCompact ? styles.accountButtonCompact : null]}
-            >
-              <Text style={styles.accountButtonLabel}>
-                {profile.displayName || currentAccountLabel || "Profile"}
-              </Text>
-              <Text style={styles.accountButtonMeta}>
-                {persistenceError
-                  ? persistenceError
-                  : lastSavedAt
-                    ? `Saved ${new Date(lastSavedAt).toLocaleDateString()}`
-                    : storageMode === "hosted"
-                      ? "Hosted account"
-                      : "This device"}
-              </Text>
-            </Pressable>
-          </View>
+      <View style={styles.brandCluster}>
+        <Pressable onPress={() => router.push("/(tabs)")} style={styles.brandMark}>
+          <Text style={styles.brandMarkText}>BL</Text>
+        </Pressable>
+        <View style={styles.brandCopy}>
+          <Text style={styles.brandEyebrow}>Personal MLB Record</Text>
+          <Text style={styles.brandTitle}>Ballpark Ledger</Text>
         </View>
-
-        {title ? <PageHeader eyebrow="App" title={title} subtitle={subtitle} /> : null}
-
-        <View style={styles.body}>{children}</View>
       </View>
 
-      {isSmallWeb ? (
-        <View style={styles.mobileNav}>
+      {showTopNav ? (
+        <View style={styles.navRow}>
           {navItems.map((item) => {
             const active = pathname === item.href;
             return (
-              <Pressable key={item.label} onPress={() => router.push(item.href)} style={styles.mobileNavItem}>
-                <Text style={[styles.mobileNavLabel, active ? styles.mobileNavLabelActive : null]}>{item.shortLabel}</Text>
+              <Pressable key={item.label} onPress={() => router.push(item.href)} style={[styles.navItem, active ? styles.navItemActive : null]}>
+                <Text style={[styles.navItemLabel, active ? styles.navItemLabelActive : null]}>{item.label}</Text>
               </Pressable>
             );
           })}
         </View>
       ) : null}
+
+      <View style={[styles.accountCluster, responsive.isCompact ? styles.accountClusterCompact : null]}>
+        <StatusPill label={statusLabel} tone={statusTone} />
+        <Pressable
+          onPress={() => router.push("/(tabs)/profile")}
+          style={[styles.accountButton, responsive.isCompact ? styles.accountButtonCompact : null]}
+        >
+          <Text style={styles.accountButtonLabel}>
+            {profile.displayName || currentAccountLabel || "Profile"}
+          </Text>
+          <Text style={styles.accountButtonMeta}>
+            {persistenceError
+              ? persistenceError
+              : lastSavedAt
+                ? `Saved ${new Date(lastSavedAt).toLocaleDateString()}`
+                : storageMode === "hosted"
+                  ? "Hosted account"
+                  : "This device"}
+          </Text>
+        </Pressable>
+      </View>
     </View>
+  );
+
+  const body = (
+    <>
+      {title ? <PageHeader eyebrow="App" title={title} subtitle={subtitle} /> : null}
+      <View style={styles.body}>{children}</View>
+    </>
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {scrollable ? (
-        <ScrollView contentContainerStyle={[styles.scroll, isSmallWeb ? styles.scrollWithMobileNav : null]}>
-          {content}
-        </ScrollView>
-      ) : (
-        content
-      )}
+      <View
+        style={[
+          styles.content,
+          {
+            paddingHorizontal: responsive.isCompact ? spacing.sm : spacing.md,
+            paddingTop: spacing.md,
+            paddingBottom: spacing.md
+          }
+        ]}
+      >
+        <View style={styles.backgroundGlowTop} />
+        <View style={styles.backgroundGlowBottom} />
+
+        <View style={styles.shell}>
+          {header}
+          {scrollable ? (
+            <ScrollView contentContainerStyle={styles.scrollContent} style={styles.scrollArea}>
+              {body}
+            </ScrollView>
+          ) : (
+            <View style={styles.staticBody}>{body}</View>
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -169,14 +159,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.canvas
   },
-  scroll: {
-    paddingBottom: spacing.xxl
-  },
-  scrollWithMobileNav: {
-    paddingBottom: 100
-  },
   content: {
-    minHeight: "100%",
+    flex: 1,
     position: "relative"
   },
   backgroundGlowTop: {
@@ -200,10 +184,20 @@ const styles = StyleSheet.create({
     opacity: 0.65
   },
   shell: {
+    flex: 1,
     width: "100%",
     maxWidth: 1220,
     alignSelf: "center",
     gap: spacing.lg
+  },
+  scrollArea: {
+    flex: 1
+  },
+  scrollContent: {
+    paddingBottom: spacing.xxl
+  },
+  staticBody: {
+    flex: 1
   },
   topBar: {
     backgroundColor: "rgba(255,253,248,0.78)",
@@ -314,33 +308,4 @@ const styles = StyleSheet.create({
   body: {
     gap: spacing.lg
   },
-  mobileNav: {
-    position: "absolute",
-    left: spacing.lg,
-    right: spacing.lg,
-    bottom: spacing.md,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    backgroundColor: "rgba(17,36,61,0.96)",
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255,253,248,0.08)",
-    ...shadows.raised
-  },
-  mobileNavItem: {
-    flex: 1,
-    minHeight: 46,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  mobileNavLabel: {
-    color: "rgba(255,253,248,0.64)",
-    fontSize: 12,
-    fontWeight: "800"
-  },
-  mobileNavLabelActive: {
-    color: colors.textInverse
-  }
 });

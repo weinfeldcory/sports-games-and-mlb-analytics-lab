@@ -20,9 +20,9 @@ For execution, prefer shipping one complete slice at a time:
 
 ## Standing Next 3
 
-1. `P0` Premium product pass across shell, Home, Log Game, recap, and logged-game detail
-2. `P0` Stats summary modules and first split views
-3. `P0` History browse/filter ergonomics plus safer edit-state signaling
+1. `P0` Make hosted account creation and login resilient to schema drift and setup gaps
+2. `P0` Premium product pass across shell, Home, Log Game, recap, and logged-game detail
+3. `P0` Stats summary modules and first split views
 
 These three tickets should always stay implementation-ready. If one ships, replace it immediately with the next highest-leverage item rather than letting the queue go stale.
 
@@ -55,6 +55,11 @@ These three tickets should always stay implementation-ready. If one ships, repla
 ## 2. First-Run And Identity
 
 ### `P0`
+
+- Make hosted auth the safest path in the product.
+  Status: `Active`
+  - Scope: signup, login, post-auth hydration, and missing-migration fallback paths must degrade cleanly instead of surfacing raw Supabase schema errors.
+  - Acceptance: a user can create an account and log in even if optional hosted profile/social columns are not present yet.
 
 - Finish the new onboarding flow and first-run empty states.
   Status: `Foundation Shipped`

@@ -186,10 +186,32 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       : "We could not load your saved local record from this device.";
   }
 
-  function buildPersistenceErrorMessage() {
-    return storageMode === "hosted"
-      ? "We could not sync your latest changes to the hosted record."
-      : "We could not save your latest changes on this device.";
+  function buildStorageErrorMessage(params: { phase: "hydrate" | "persist"; error: unknown }) {
+    const baseMessage = params.phase === "hydrate"
+      ? buildHydrationErrorMessage()
+      : storageMode === "hosted"
+        ? "We could not sync your latest changes to the hosted record."
+        : "We could not save your latest changes on this device.";
+
+    if (params.error instanceof Error && params.error.message.trim()) {
+      return `${baseMessage} Details: ${params.error.message.trim()}`;
+    }
+
+    if (typeof params.error === "string" && params.error.trim()) {
+      return `${baseMessage} Details: ${params.error.trim()}`;
+    }
+
+    try {
+      const serialized = JSON.stringify(params.error);
+      if (serialized && serialized !== "{}") {
+        return `${baseMessage} Details: ${serialized}`;
+      }
+    } catch {
+      // Fall back to String(error).
+    }
+
+    const fallback = String(params.error ?? "").trim();
+    return fallback ? `${baseMessage} Details: ${fallback}` : baseMessage;
   }
 
   async function hydrateFromStorage() {
@@ -202,9 +224,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       await refreshSocialGraph(hydratedState.currentUserId ?? hydratedState.currentAccount?.id ?? null, hydratedState.profile);
       markHydratedNow();
       setPersistenceStatus("idle");
-    } catch {
+    } catch (error) {
       setPersistenceStatus("error");
-      setPersistenceError(buildHydrationErrorMessage());
+      setPersistenceError(buildStorageErrorMessage({ phase: "hydrate", error }));
     } finally {
       setIsHydrated(true);
     }
@@ -249,10 +271,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         saveTimeoutRef.current = setTimeout(() => {
           setPersistenceStatus("idle");
         }, 1200);
-      } catch {
+      } catch (error) {
         if (!canceled) {
           setPersistenceStatus("error");
-          setPersistenceError(buildPersistenceErrorMessage());
+          setPersistenceError(buildStorageErrorMessage({ phase: "persist", error }));
         }
       }
     }

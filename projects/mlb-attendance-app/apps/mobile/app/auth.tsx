@@ -8,6 +8,29 @@ import { SectionCard } from "../src/components/common/SectionCard";
 import { useAppData } from "../src/providers/AppDataProvider";
 import { colors, spacing } from "../src/styles/tokens";
 
+function toFriendlyAuthErrorMessage(error: unknown, isHosted: boolean) {
+  const fallbackMessage = isHosted
+    ? "We could not open that hosted account."
+    : "We could not open that local account.";
+
+  if (!(error instanceof Error)) {
+    return fallbackMessage;
+  }
+
+  const normalized = error.message.toLowerCase();
+  if (
+    isHosted
+    && (normalized.includes("schema cache")
+      || normalized.includes("'avatar_url' column")
+      || normalized.includes("'username' column")
+      || normalized.includes("'profile_visibility' column"))
+  ) {
+    return "Hosted account setup is still finishing. Try again shortly. If it keeps happening, run the latest Supabase profile migration.";
+  }
+
+  return error.message;
+}
+
 export default function AuthScreen() {
   const router = useRouter();
   const termsRoute = "/legal/terms" as Href;
@@ -55,13 +78,7 @@ export default function AuthScreen() {
         await signUp({ identifier, password, displayName });
       }
     } catch (submissionError) {
-      setError(
-        submissionError instanceof Error
-          ? submissionError.message
-          : isHosted
-            ? "We could not open that hosted account."
-            : "We could not open that local account."
-      );
+      setError(toFriendlyAuthErrorMessage(submissionError, isHosted));
     } finally {
       setIsSubmitting(false);
     }

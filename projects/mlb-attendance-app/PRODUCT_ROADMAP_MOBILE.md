@@ -147,6 +147,7 @@ Core workstreams:
 
 Current highest-leverage tickets:
 
+- Make hosted account creation and login resilient to schema drift so auth never fails on optional profile/social columns.
 - Redesign the global shell, Home, Log Game, recap, and logged-game detail surfaces into a cohesive premium product pass.
 - Add split views to `Stats` for season, stadium, opponent, weekday, and home-vs-away questions.
 - Add narrative summary modules above the Stats tables so the page is not just two grids.

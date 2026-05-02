@@ -12,6 +12,7 @@ import { formatTimestamp } from "../../lib/runtimeInfo";
 
 export function ProfileScreen() {
   const router = useRouter();
+  const authRoute = "/auth" as Href;
   const debugRoute = "/debug" as Href;
   const termsRoute = "/legal/terms" as Href;
   const privacyRoute = "/legal/privacy" as Href;
@@ -53,6 +54,7 @@ export function ProfileScreen() {
   const [peopleQuery, setPeopleQuery] = useState("");
   const [peopleResults, setPeopleResults] = useState<typeof friends>([]);
   const [isSearchingPeople, setIsSearchingPeople] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     setDisplayName(profile.displayName);
@@ -107,6 +109,21 @@ export function ProfileScreen() {
     }
   }
 
+  async function handleSignOut() {
+    setIsSigningOut(true);
+    setErrorMessage(null);
+    setMessage(null);
+
+    try {
+      await signOut();
+      router.replace(authRoute);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Could not sign out right now.");
+    } finally {
+      setIsSigningOut(false);
+    }
+  }
+
   return (
     <Screen
       title="Profile And Network"
@@ -130,7 +147,11 @@ export function ProfileScreen() {
             />
             <View style={styles.actionStack}>
               <PrimaryButton label="Save Profile" onPress={handleSave} />
-              <PrimaryButton label="Sign Out" onPress={signOut} />
+              <PrimaryButton
+                label={isSigningOut ? "Signing Out..." : "Sign Out"}
+                onPress={handleSignOut}
+                disabled={isSigningOut}
+              />
             </View>
             {message ? <Text style={styles.successText}>{message}</Text> : null}
           </SectionCard>

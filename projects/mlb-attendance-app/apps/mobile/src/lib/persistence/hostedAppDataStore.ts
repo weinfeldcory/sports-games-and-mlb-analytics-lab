@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { mockUser } from "../data/mockSportsData";
 import type { AttendanceLog, UserProfile, WitnessedEvent } from "@mlb-attendance/domain";
 import type {
@@ -47,17 +48,118 @@ const PROFILE_SELECT_EXTENDED = `${PROFILE_SELECT_BASE}, username, avatar_url, p
 
 function isMissingProfileSchemaError(message: string) {
   const normalized = message.toLowerCase();
-  return normalized.includes("profiles.username")
-    || normalized.includes("profiles.avatar_url")
-    || normalized.includes("profiles.profile_visibility")
-    || normalized.includes("shared_games_logged")
-    || normalized.includes("shared_stadiums_visited");
+  return [
+    "profiles.username",
+    "profiles.avatar_url",
+    "profiles.profile_visibility",
+    "shared_games_logged",
+    "shared_stadiums_visited",
+    "'username' column",
+    "'avatar_url' column",
+    "'profile_visibility' column",
+    "'shared_games_logged' column",
+    "'shared_stadiums_visited' column",
+    "schema cache"
+  ].some((pattern) => normalized.includes(pattern));
 }
 
 type AttendanceLogUpsertRow = Omit<AttendanceLogRow, "id">;
+type HostedCachedState = {
+  version: 1;
+  userId: string;
+  email: string;
+  profile: UserProfile;
+  attendanceLogs: AttendanceLog[];
+  lastLocalWriteAt: string;
+};
 
 function sortAttendanceLogs(logs: AttendanceLog[]) {
   return [...logs].sort((left, right) => right.attendedOn.localeCompare(left.attendedOn));
+}
+
+function buildHostedCacheKey(userId: string) {
+  return `hostedCache_${userId}`;
+}
+
+function mergeAttendanceLogs(primary: AttendanceLog[], secondary: AttendanceLog[]) {
+  const byGameId = new Map<string, AttendanceLog>();
+
+  primary.forEach((log) => {
+    byGameId.set(log.gameId, log);
+  });
+
+  secondary.forEach((log) => {
+    byGameId.set(log.gameId, log);
+  });
+
+  return sortAttendanceLogs([...byGameId.values()]);
+}
+
+function mergeHostedProfile(remoteProfile: UserProfile, cachedProfile?: UserProfile) {
+  if (!cachedProfile) {
+    return remoteProfile;
+  }
+
+  return {
+    ...remoteProfile,
+    username: cachedProfile.username ?? remoteProfile.username,
+    displayName: cachedProfile.displayName?.trim() || remoteProfile.displayName,
+    favoriteTeamId: cachedProfile.favoriteTeamId ?? remoteProfile.favoriteTeamId,
+    followingIds: cachedProfile.followingIds ?? remoteProfile.followingIds,
+    avatarUrl: cachedProfile.avatarUrl ?? remoteProfile.avatarUrl,
+    profileVisibility: cachedProfile.profileVisibility ?? remoteProfile.profileVisibility,
+    hasCompletedOnboarding: cachedProfile.hasCompletedOnboarding ?? remoteProfile.hasCompletedOnboarding
+  };
+}
+
+async function loadHostedCache(userId: string): Promise<HostedCachedState | null> {
+  const raw = await AsyncStorage.getItem(buildHostedCacheKey(userId));
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<HostedCachedState>;
+    if (
+      parsed.version !== 1
+      || parsed.userId !== userId
+      || typeof parsed.email !== "string"
+      || !parsed.profile
+      || !Array.isArray(parsed.attendanceLogs)
+      || typeof parsed.lastLocalWriteAt !== "string"
+    ) {
+      return null;
+    }
+
+    return {
+      version: 1,
+      userId,
+      email: parsed.email,
+      profile: parsed.profile,
+      attendanceLogs: sortAttendanceLogs(parsed.attendanceLogs),
+      lastLocalWriteAt: parsed.lastLocalWriteAt
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function saveHostedCache(params: {
+  userId: string;
+  email: string;
+  profile: UserProfile;
+  attendanceLogs: AttendanceLog[];
+}) {
+  const payload: HostedCachedState = {
+    version: 1,
+    userId: params.userId,
+    email: params.email,
+    profile: params.profile,
+    attendanceLogs: sortAttendanceLogs(params.attendanceLogs),
+    lastLocalWriteAt: new Date().toISOString()
+  };
+
+  await AsyncStorage.setItem(buildHostedCacheKey(params.userId), JSON.stringify(payload, null, 2));
 }
 
 function createSignedOutState(): HydratedAppDataState {
@@ -77,6 +179,27 @@ function requireSupabaseClient() {
   }
 
   return supabase;
+}
+
+function toErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  if (typeof error === "string" && error.trim()) {
+    return error.trim();
+  }
+
+  try {
+    const serialized = JSON.stringify(error);
+    if (serialized && serialized !== "{}") {
+      return serialized;
+    }
+  } catch {
+    // Fall through to String(error).
+  }
+
+  return String(error);
 }
 
 function mapProfileRowToProfile(row: ProfileRow): UserProfile {
@@ -187,7 +310,7 @@ async function fetchProfileRowForUser(userId: string) {
     .maybeSingle<ProfileRow>();
 
   if (fallbackQuery.error) {
-    throw new Error(fallbackQuery.error.message);
+    throw new Error(`profiles fallback read failed: ${fallbackQuery.error.message}`);
   }
 
   return fallbackQuery.data ?? null;
@@ -221,7 +344,7 @@ async function upsertHostedProfile(params: {
   }
 
   if (!isMissingProfileSchemaError(fullError.message)) {
-    throw new Error(fullError.message);
+    throw new Error(`profiles upsert failed: ${fullError.message}`);
   }
 
   const { error: fallbackError } = await client.from("profiles").upsert({
@@ -234,7 +357,7 @@ async function upsertHostedProfile(params: {
   });
 
   if (fallbackError) {
-    throw new Error(fallbackError.message);
+    throw new Error(`profiles fallback upsert failed: ${fallbackError.message}`);
   }
 }
 
@@ -273,27 +396,60 @@ async function ensureHostedProfile(userId: string, email: string, fallbackDispla
 
 async function fetchHydratedStateForUser(userId: string, email: string, fallbackDisplayName?: string) {
   const client = requireSupabaseClient();
-  const profileRow = await ensureHostedProfile(userId, email, fallbackDisplayName);
+  const cachedState = await loadHostedCache(userId);
+
+  try {
+    const profileRow = await ensureHostedProfile(userId, email, fallbackDisplayName);
   const { data: rawAttendanceRows, error: attendanceError } = await client
-    .from("attendance_logs")
-    .select(
-      "id, user_id, game_id, venue_id, attended_on, seat_section, seat_row, seat_number, witnessed_events, memorable_moment, companion, giveaway, weather"
-    )
-    .eq("user_id", userId)
-    .order("attended_on", { ascending: false })
-    .returns<AttendanceLogRow[]>();
+      .from("attendance_logs")
+      .select(
+        "id, user_id, game_id, venue_id, attended_on, seat_section, seat_row, seat_number, witnessed_events, memorable_moment, companion, giveaway, weather"
+      )
+      .eq("user_id", userId)
+      .order("attended_on", { ascending: false })
+      .returns<AttendanceLogRow[]>();
 
-  if (attendanceError) {
-    throw new Error(attendanceError.message);
+    if (attendanceError) {
+      throw new Error(`attendance read failed: ${attendanceError.message}`);
+    }
+
+    const remoteState = {
+      accounts: [buildAccount(userId, email)],
+      currentAccount: buildAccount(userId, email),
+      currentUserId: userId,
+      profile: mapProfileRowToProfile(profileRow),
+      attendanceLogs: (rawAttendanceRows ?? []).map(mapAttendanceRowToLog)
+    } satisfies HydratedAppDataState;
+
+    const mergedState = cachedState
+      ? {
+          ...remoteState,
+          profile: mergeHostedProfile(remoteState.profile, cachedState.profile),
+          attendanceLogs: mergeAttendanceLogs(remoteState.attendanceLogs, cachedState.attendanceLogs)
+        }
+      : remoteState;
+
+    await saveHostedCache({
+      userId,
+      email,
+      profile: mergedState.profile,
+      attendanceLogs: mergedState.attendanceLogs
+    });
+
+    return mergedState;
+  } catch (error) {
+    if (cachedState) {
+      return {
+        accounts: [buildAccount(userId, cachedState.email)],
+        currentAccount: buildAccount(userId, cachedState.email),
+        currentUserId: userId,
+        profile: cachedState.profile,
+        attendanceLogs: sortAttendanceLogs(cachedState.attendanceLogs)
+      };
+    }
+
+    throw new Error(`hosted hydration failed: ${toErrorMessage(error)}`);
   }
-
-  return {
-    accounts: [buildAccount(userId, email)],
-    currentAccount: buildAccount(userId, email),
-    currentUserId: userId,
-    profile: mapProfileRowToProfile(profileRow),
-    attendanceLogs: (rawAttendanceRows ?? []).map(mapAttendanceRowToLog)
-  } satisfies HydratedAppDataState;
 }
 
 async function syncHostedState(params: PersistCurrentUserParams) {
@@ -308,7 +464,7 @@ async function syncHostedState(params: PersistCurrentUserParams) {
   } = await client.auth.getSession();
 
   if (sessionError) {
-    throw new Error(sessionError.message);
+    throw new Error(`session lookup failed: ${sessionError.message}`);
   }
 
   if (!session?.user) {
@@ -319,6 +475,13 @@ async function syncHostedState(params: PersistCurrentUserParams) {
   if (!email) {
     throw new Error("Hosted account is missing an email address.");
   }
+
+  await saveHostedCache({
+    userId: session.user.id,
+    email,
+    profile: params.profile,
+    attendanceLogs: params.attendanceLogs
+  });
 
   await upsertHostedProfile({
     userId: session.user.id,
@@ -342,7 +505,7 @@ async function syncHostedState(params: PersistCurrentUserParams) {
     .returns<Array<{ game_id: string }>>();
 
   if (existingRowsError) {
-    throw new Error(existingRowsError.message);
+    throw new Error(`existing attendance read failed: ${existingRowsError.message}`);
   }
 
   const nextGameIds = new Set(nextRows.map((row) => row.game_id));
@@ -353,7 +516,7 @@ async function syncHostedState(params: PersistCurrentUserParams) {
       .from("attendance_logs")
       .upsert(nextRows, { onConflict: "user_id,game_id" });
     if (upsertLogsError) {
-      throw new Error(upsertLogsError.message);
+      throw new Error(`attendance upsert failed: ${upsertLogsError.message}`);
     }
   }
 
@@ -365,9 +528,16 @@ async function syncHostedState(params: PersistCurrentUserParams) {
       .in("game_id", gameIdsToDelete);
 
     if (deleteLogsError) {
-      throw new Error(deleteLogsError.message);
+      throw new Error(`attendance delete failed: ${deleteLogsError.message}`);
     }
   }
+
+  await saveHostedCache({
+    userId: session.user.id,
+    email,
+    profile: params.profile,
+    attendanceLogs: params.attendanceLogs
+  });
 }
 
 export const hostedAppDataStore: AppDataStore = {
@@ -442,7 +612,11 @@ export const hostedAppDataStore: AppDataStore = {
     );
   },
   async signOut(params: SignOutParams) {
-    await syncHostedState(params.currentSession);
+    try {
+      await syncHostedState(params.currentSession);
+    } catch {
+      // Logout should not be blocked by a sync failure.
+    }
 
     const client = requireSupabaseClient();
     const { error } = await client.auth.signOut();

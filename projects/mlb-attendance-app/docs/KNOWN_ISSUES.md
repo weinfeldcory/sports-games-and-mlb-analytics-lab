@@ -6,9 +6,17 @@ This file tracks live beta issues, operational risks, and reliability gaps separ
 
 ## Open Issues
 
-### Hosted schema drift can still degrade social features
+### Hosted schema drift can still break account creation or login
 
-- Impact: core hosted login should now work more reliably, but if the deployed Supabase project has not run the latest social/profile migration, social surfaces may degrade or return empty states.
+- Impact: if the deployed Supabase project has not run the latest profile/social migration, hosted sign-up or sign-in can surface raw schema-cache errors instead of opening the ledger.
+- User impact: the primary auth path can fail before a user ever reaches the product.
+- Mitigation: keep the client tolerant of missing optional profile columns and run `supabase/migrations/20260501_social_graph_mvp.sql` against the production Supabase project.
+- Owner: Cory
+- Priority: `P0`
+
+### Hosted schema drift can still degrade social features after auth
+
+- Impact: even when auth succeeds, social surfaces may degrade or return empty states until the latest profile/social migration is applied.
 - User impact: following, profile discovery, or username-based views may appear incomplete.
 - Mitigation: run `supabase/migrations/20260501_social_graph_mvp.sql` against the production Supabase project.
 - Owner: Cory

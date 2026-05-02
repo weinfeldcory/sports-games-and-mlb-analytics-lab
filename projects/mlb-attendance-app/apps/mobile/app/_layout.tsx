@@ -16,7 +16,6 @@ export default function RootLayout() {
           <Stack.Screen name="logged-game/[logId]" />
           <Stack.Screen name="friends/[userId]" />
           <Stack.Screen name="debug" />
-          <Stack.Screen name="legal" />
           <Stack.Screen name="(tabs)" />
         </Stack>
       </AppDataProvider>

@@ -42,13 +42,25 @@ function requireSupabaseClient() {
 
 function isHostedSocialUnavailable(message: string) {
   const normalized = message.toLowerCase();
-  return normalized.includes("profiles.username")
-    || normalized.includes("function public.search_profiles")
-    || normalized.includes("function public.get_following_profiles")
-    || normalized.includes("function public.get_follower_profiles")
-    || normalized.includes("function public.get_pending_follow_requests")
-    || normalized.includes("function public.get_friend_profile")
-    || normalized.includes("relation \"user_follows\" does not exist");
+  return [
+    "profiles.username",
+    "profiles.avatar_url",
+    "profiles.profile_visibility",
+    "shared_games_logged",
+    "shared_stadiums_visited",
+    "'username' column",
+    "'avatar_url' column",
+    "'profile_visibility' column",
+    "'shared_games_logged' column",
+    "'shared_stadiums_visited' column",
+    "function public.search_profiles",
+    "function public.get_following_profiles",
+    "function public.get_follower_profiles",
+    "function public.get_pending_follow_requests",
+    "function public.get_friend_profile",
+    "relation \"user_follows\" does not exist",
+    "schema cache"
+  ].some((pattern) => normalized.includes(pattern));
 }
 
 async function requireAuthenticatedUserId() {
